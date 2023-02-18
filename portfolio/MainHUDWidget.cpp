@@ -2,31 +2,25 @@
 
 
 #include "MainHUDWidget.h"
-/*
-void UMainHUDWidget::BindPlayerState(AABPlayerState* PlayerState)
-{
-}
+#include "Components/ProgressBar.h"
 
 void UMainHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	HPBar = Cast<UProgressBar>(GetWidgetFromName(TEXT("pbHP")));
-	check(nullptr != HPBar);
+	//check(nullptr != HPBar);
 
-	ExpBar = Cast<UProgressBar>(GetWidgetFromName(TEXT("pbExp")));
-	check(nullptr != ExpBar);
+	//ExpBar = Cast<UProgressBar>(GetWidgetFromName(TEXT("pbExp")));
+	//check(nullptr != ExpBar);
 
 
-	PlayerLevel = Cast<UTextBlock>(GetWidgetFromName(TEXT("txtLevel")));
-	check(nullptr != PlayerLevel);
 
 }
 
-void UMainHUDWidget::UpdateCharacterStat()
+void UMainHUDWidget::UpdateHPWidget(float HPpercent)
 {
+	if (nullptr != HPBar)
+	{
+		HPBar->SetPercent(HPpercent/100.f);
+	}
 }
-
-void UMainHUDWidget::UpdatePlayerState()
-{
-}
-*/

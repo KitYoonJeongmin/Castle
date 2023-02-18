@@ -16,7 +16,7 @@ DECLARE_MULTICAST_DELEGATE(FOnAttackHitCheckDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnEQUIPDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnsheathDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnBowFireDelegate);
-
+DECLARE_MULTICAST_DELEGATE(FOnBowSkill1Delegate);
 
 UCLASS()
 class PORTFOLIO_API UMainAnimInstance : public UAnimInstance
@@ -41,6 +41,7 @@ public:
 
 	void PlayDrawBowMontage();
 	void PlayBowShotMontage();
+	void PlayBowSkill1Montage();
 
 	void JumpToAttackMontageSection(int32 NewSection);
 	void JumpToSwordMontageSection(int32 NewSection);
@@ -49,6 +50,7 @@ public:
 	FOnEQUIPDelegate OnEQUIP;
 	FOnsheathDelegate Onsheath;
 	FOnBowFireDelegate OnBowFire;
+	FOnBowSkill1Delegate OnBowSkill1;
 	
 public:
 	void SetDeadAnim() { IsDead = true; }
@@ -117,6 +119,8 @@ protected:
 		UAnimMontage* DrawBowMontage;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* ShotBowMontage;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
+		UAnimMontage* BowSkill1;
 
 	//Bow
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
@@ -149,6 +153,8 @@ protected:
 		void AnimNotify_StartDrawBow();
 	UFUNCTION()
 		void AnimNotify_BowFire();
+	UFUNCTION()
+		void AnimNotify_BowSkill1();
 
 	FName GetAttackMontageSectionName(int32 Section);
 

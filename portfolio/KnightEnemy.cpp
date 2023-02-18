@@ -4,6 +4,7 @@
 #include "KnightEnemy.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -13,6 +14,7 @@
 #include "Sword.h"
 #include "MainEnemyAIController.h"
 #include "KnightEnemyAnimInstance.h"
+#include "MainHUDWidget.h"
 
 
 
@@ -60,6 +62,19 @@ AKnightEnemy::AKnightEnemy()
 
 	//HP
 	HealthPoint = 100.f;
+	HPBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPBARWIDGET"));
+	HPBarWidget->SetupAttachment(RootComponent);
+
+	HPBarWidget->SetRelativeLocation(FVector(0, 0, 120.f));
+	HPBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("WidgetBlueprint'/Game/AMyDirectory/UI/UI_EnemyHP.UI_EnemyHP_C'"));
+	if (UI_HUD.Succeeded())
+	{
+		HPBarWidget->SetWidgetClass(UI_HUD.Class);
+		HPBarWidget->SetDrawSize(FVector2D(100,15));
+	}
+	
 }
 
 // Called when the game starts or when spawned
@@ -69,6 +84,7 @@ void AKnightEnemy::BeginPlay()
 	Sword = GetWorld()->SpawnActor<ASword>(FVector::ZeroVector, FRotator::ZeroRotator);
 	SetWeapon(Sword, TEXT("sword_lSocket"));
 	
+	Cast<UMainHUDWidget>(HPBarWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
 }
 
 // Called every frame
@@ -275,7 +291,7 @@ float AKnightEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		}
 		
 	}
-	
+	Cast<UMainHUDWidget>(HPBarWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
 	return FinalDamage;
 }
 

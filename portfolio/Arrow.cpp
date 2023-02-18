@@ -19,9 +19,16 @@ AArrow::AArrow()
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ArrowStaticMesh(TEXT("StaticMesh'/Game/AMyDirectory/ArrowBow/Arrow/arrowyfbx.arrowyfbx'"));
 	if (ArrowStaticMesh.Succeeded())
 	{
-		Arrow->SetStaticMesh(ArrowStaticMesh.Object);
+		DefaultArrowMesh = ArrowStaticMesh.Object;
+		Arrow->SetStaticMesh(DefaultArrowMesh);
 	}
-	Arrow->SetEnableGravity(true);
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> LightArrowStaticMesh(TEXT("StaticMesh'/Game/AMyDirectory/ArrowBow/Arrow/lightarrowyfbx.lightarrowyfbx'"));
+	if (LightArrowStaticMesh.Succeeded())
+	{
+		LightArrowMesh = LightArrowStaticMesh.Object;
+	}
+	
+	Arrow->SetEnableGravity(true); 
 	Arrow->SetSimulatePhysics(false);
 	Arrow->SetCollisionProfileName(TEXT("NoCollision"));
 	RootComponent = Arrow;
@@ -38,7 +45,19 @@ AArrow::AArrow()
 	{
 		PoisionParticle = Poision.Object;
 	}
-	
+	//머티리얼
+	static ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("Material'/Game/AMyDirectory/Materials/M_ArrowSkill1.M_ArrowSkill1'"));
+	if (MaterialAsset.Succeeded())
+	{
+		LightingArrowMat = MaterialAsset.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<UMaterial> DefaultMaterialAsset(TEXT("Material'/Game/AMyDirectory/ArrowBow/Arrow/M_Arrow.M_Arrow'"));
+	if (DefaultMaterialAsset.Succeeded())
+	{
+		DefaultArrowMat = DefaultMaterialAsset.Object;
+	}
+
+
 	//독
 	PoisionTime = 10.f;	//10초
 	
@@ -48,6 +67,8 @@ AArrow::AArrow()
 void AArrow::BeginPlay()
 {
 	Super::BeginPlay();
+	//SetLightMat(false);
+	
 	// 겹침 델리게이트 함수 등록
 	Arrow->OnComponentBeginOverlap.AddDynamic(this, &AArrow::ArrowBeginOverlap);
 	
@@ -56,7 +77,7 @@ void AArrow::BeginPlay()
 void AArrow::ArrowBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	//이름 출력(디버깅)
-	//UE_LOG(LogTemp, Warning, TEXT("Arrow Hit Actor: %s"), *OtherActor->GetName());
+	UE_LOG(LogTemp, Warning, TEXT("Arrow Hit Actor: %s"), *OtherActor->GetName());
 	
 	//충돌감지 비활성화
 	Arrow->SetSimulatePhysics(false);
@@ -108,8 +129,6 @@ void AArrow::Tick(float DeltaTime)
 
 void AArrow::Fire(AActor* Target, FVector ForwardVec)
 {
-	
-
 	//콜리전 설정
 	Arrow->SetSimulatePhysics(true);
 	Arrow->SetNotifyRigidBodyCollision(true);
@@ -144,9 +163,19 @@ void AArrow::Fire(AActor* Target, FVector ForwardVec)
 		//UGameplayStatics::PredictProjectilePath(this, predictParams, result);
 		
 		Arrow->AddImpulse(outVelocity);
-		Arrow->AddForce(ForwardVec*15.f);
+		Arrow->AddForce(ForwardVec*9000.f);
 	}
 	
+}
+
+void AArrow::FireStrate(FVector TargetLoc)
+{
+	//콜리전 설정
+	Arrow->SetSimulatePhysics(true);
+	Arrow->SetNotifyRigidBodyCollision(true);
+	Arrow->SetCollisionProfileName(TEXT("Arrow"));
+
+	Arrow->AddForce((TargetLoc - GetActorLocation())*1000.f);  //AddForce(TargetLoc * 100.f);
 }
 
 void AArrow::SetArrowState(uint8 ArrowStateNum)
@@ -171,4 +200,24 @@ void AArrow::SetArrowState(uint8 ArrowStateNum)
 	}
 	
 }
+
+void AArrow::SetLightMat(bool isLight)
+{
+	if (isLight)
+		Arrow->SetStaticMesh(LightArrowMesh);
+	else
+		Arrow->SetStaticMesh(DefaultArrowMesh);
+
+
+	//RootComponent = CurrentMesh;
+	//UStaticMesh a = (Arrow->GetStaticMesh());
+	//Arrow->SetStaticMesh(CurrentMesh);
+	
+}
+
+UStaticMeshComponent* AArrow::GetMesh()
+{
+	return Arrow;
+}
+
 

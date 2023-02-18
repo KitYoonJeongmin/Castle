@@ -81,6 +81,11 @@ UMainAnimInstance::UMainAnimInstance()
 	{
 		ShotBowMontage = ShotBow_MONTAGE.Object;
 	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> BowSkill1_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/MonBowSkill1.MonBowSkill1'"));
+	if (BowSkill1_MONTAGE.Succeeded())
+	{
+		BowSkill1 = BowSkill1_MONTAGE.Object;
+	}
 	
 }
 
@@ -131,6 +136,12 @@ void UMainAnimInstance::PlayBowShotMontage()
 {
 	check(!IsDead);
 	Montage_Play(ShotBowMontage, 1.f);
+}
+
+void UMainAnimInstance::PlayBowSkill1Montage()
+{
+	check(!IsDead);
+	Montage_Play(BowSkill1, 1.f);
 }
 
 void UMainAnimInstance::PlayAttackMontage()
@@ -376,6 +387,10 @@ void UMainAnimInstance::AnimNotify_StartDrawBow()
 void UMainAnimInstance::AnimNotify_BowFire()
 {
 	OnBowFire.Broadcast();
+}
+void UMainAnimInstance::AnimNotify_BowSkill1()
+{
+	OnBowSkill1.Broadcast();
 }
 FName UMainAnimInstance::GetAttackMontageSectionName(int32 Section)
 {

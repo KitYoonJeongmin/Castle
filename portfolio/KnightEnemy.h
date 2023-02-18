@@ -74,6 +74,10 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 		int32 CurrentCombo;
 private:
-	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
+	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = HealthPoint, Meta = (AllowPrivateAccess = true))
 		float HealthPoint;
+	UPROPERTY(VisibleAnyWhere, Category = UI)
+		class UWidgetComponent* HPBarWidget;
+	UPROPERTY(VisibleAnyWhere, Category = UI)
+		class UProgressBar* HPProgressBar;
 };

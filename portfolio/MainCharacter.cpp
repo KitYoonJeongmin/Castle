@@ -198,36 +198,12 @@ void AMainCharacter::Skill1()
 			}), WaitTime, false);
 		break;
 	case EWeapon::Bow :
-		//if (isZooming) break;
-		//TArray<FHitResult> hits;
+		if (isZooming) break;
+		
+		//애니메이션
+		MainAnim->PlayBowSkill1Montage();
+		Bow->PlayDrawBowMon(true,1);
 
-		//TArray<TEnumAsByte<EObjectTypeQuery>> objectType;
-		//objectType.Emplace(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
-		//if (UKismetSystemLibrary::SphereTraceMultiForObjects(this, GetActorLocation(), GetActorLocation(), 1300.f, objectType,
-		//	false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, hits, true))
-		//{
-		//	for (int i = 0; i < hits.Num(); i++)
-		//	{
-		//		//필터링
-		//		auto enemy = Cast<AKnightEnemy>(hits[i].GetActor());
-		//		if (enemy == nullptr) continue;
-		//		if(FindBetweenAngle(GetActorLocation(), GetActorForwardVector(), enemy->GetActorLocation())>75.f) continue;
-
-		//		//화살
-		//		FActorSpawnParameters SpawnInfo;
-		//		Arrow = GetWorld()->SpawnActor<AArrow>(SpawnInfo);
-		//		if (Arrow != nullptr)
-		//		{
-		//			Arrow->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, "ArrowSocket");
-		//			Arrow->Fire(enemy, FollowCamera->GetForwardVector());
-		//		}
-		//		
-
-		//		//데미지
-		//		FDamageEvent DamageEvent;
-		//		enemy->TakeDamage(10.0f, DamageEvent, GetController(), this);
-		//	}
-		//}
 
 		break;
 	}
@@ -509,17 +485,8 @@ void AMainCharacter::Attack()
 		}
 		break;
 	case EWeapon::Bow:
-		//if (!isZooming) break;
 		MainAnim->isAimming = true;
-		Bow->PlayDrawBowMon(true);
-
-		FActorSpawnParameters SpawnInfo;
-		Arrow = GetWorld()->SpawnActor<AArrow>(SpawnInfo);
-		if (Arrow != nullptr)
-		{
-			Arrow->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, "ArrowSocket");
-			ArrowType = 0;
-		}
+		Bow->PlayDrawBowMon(true,0);
 		break;
 	}
 
@@ -531,11 +498,7 @@ void AMainCharacter::AttackRelease()
 {
 	switch (CurrentWeapon)
 	{
-	case EWeapon::Sword:
-		break;
 	case EWeapon::Bow:
-		//if (!isZooming) break;
-		//Shot();
 		MainAnim->isAimming = false;
 		break;
 	}
@@ -560,13 +523,7 @@ void AMainCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupt
 
 void AMainCharacter::ArrowChangePlus()
 {
-	ArrowType++;
-	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EArrowState"), true);
-	if (!EnumPtr) return;
-	if(ArrowType >= EnumPtr->NumEnums())
-		ArrowType=0;
-	if(Arrow != nullptr)
-		Arrow->SetArrowState(ArrowType);
+	Bow->SetArrowType();
 }
 
 
@@ -678,9 +635,9 @@ void AMainCharacter::Tick(float DeltaTime)
 		float AddYaw = FindBetweenAngle(FollowCamera->GetComponentLocation(), FollowCamera->GetForwardVector(), NearEnemy->GetActorLocation());
 		if (abs(AddYaw) < 75.f)
 		{
-			float LookYaw = FMath::FInterpTo(GetController()->GetControlRotation().Yaw, GetController()->GetControlRotation().Yaw+AddYaw, DeltaTime, 3.f);
+			float LookYaw = FMath::FInterpTo(GetController()->GetControlRotation().Yaw, GetController()->GetControlRotation().Yaw+AddYaw, DeltaTime, 1.f);
 			//설정
-			GetController()->SetControlRotation(FRotator(GetController()->GetControlRotation().Pitch, LookYaw, GetControlRotation().Roll));
+			GetController()->SetControlRotation(FRotator(GetControlRotation().Pitch, LookYaw, GetControlRotation().Roll));
 		}
 		
 	}
@@ -802,15 +759,12 @@ void AMainCharacter::PostInitializeComponents()
 		SetWeapon(EWeapon::Hand);
 	});
 	MainAnim->OnBowFire.AddLambda([this]()->void{
-		if (Arrow == nullptr) return;
-		Bow->PlayDrawBowMon(false);
-
-		FHitResult HitResult = LineTrace();
-
-		Arrow->DetachRootComponentFromParent();
-		Arrow->Fire(HitResult.Actor.Get(),FollowCamera->GetForwardVector());
-		Arrow = nullptr;
+		Bow->PlayDrawBowMon(false,0);
+	});
+	MainAnim->OnBowSkill1.AddLambda([this]()->void {
+		Bow->SpawnWideArrow();
 		});
+	
 }
 
 void AMainCharacter::SwitchWeapon(AActor* NewWeapon, FName WeaponSocket)
@@ -861,9 +815,10 @@ void AMainCharacter::FindNearEnemy()
 	FVector EndPos = StartPos + CameraVec * 3000.f;
 	TArray<FHitResult> hits;
 	TArray<TEnumAsByte<EObjectTypeQuery>> objectType;
-	objectType.Emplace(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+	TEnumAsByte<EObjectTypeQuery> Enemy = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody);
+	objectType.Emplace(Enemy);
 	AActor* closetEnemy = nullptr;
-	if (UKismetSystemLibrary::SphereTraceMultiForObjects(this, StartPos, EndPos, 300.f, objectType, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hits, true))
+	if (UKismetSystemLibrary::SphereTraceMultiForObjects(this, StartPos, EndPos, 300.f, objectType, false, TArray<AActor*>(), EDrawDebugTrace::None, hits, true))
 	{
 		for (int i = 0; i < hits.Num(); i++)
 		{
