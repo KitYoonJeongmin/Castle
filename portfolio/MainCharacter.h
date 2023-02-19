@@ -11,9 +11,9 @@ DECLARE_MULTICAST_DELEGATE(FOnAttackEndDelegate);
 UENUM(BlueprintType)
 enum class EWeapon : uint8
 {
-	Hand UMETA(DisplayName = "Hand"),
-	Sword UMETA(DisplayName = "Sword"),
-	Bow UMETA(DisplayName = "Bow"),
+	Hand = 0 UMETA(DisplayName = "Hand"),
+	Sword = 1 UMETA(DisplayName = "Sword"),
+	Bow = 2 UMETA(DisplayName = "Bow"),
 };
 UCLASS()
 class PORTFOLIO_API AMainCharacter : public ACharacter
@@ -130,6 +130,8 @@ public:
 public:
 	UFUNCTION()
 		void ArrowChangePlus();
+	UFUNCTION()
+		void SetManaPoint(float PlusPoint);
 	
 protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
@@ -171,10 +173,13 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = true))
 		float HealthPoint;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = true))
+		float ManaPoint;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stat", meta = (AllowPrivateAccess = true))
 		USoundBase* BlockSound;
 	float ArmLengthTo;
 private:
 	AActor* NearEnemy;
 	class AArrow* Arrow;
 	uint8 ArrowType=0;
+	class AMainGameModeBase* MainGameMode;
 };

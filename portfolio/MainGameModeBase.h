@@ -20,10 +20,17 @@ public:
 	virtual void BeginPlay();
 	void AttachAimWidget(bool isView);
 	void SetAimColor(bool isCanAttack);
-
+	void WeaponChange(uint8 WeaponIdx);
+	void SetHealthPointHUD(float hp);
+	void SetExperiencePointHUD(float exp);
 protected:
 	UPROPERTY()
 	TSubclassOf<UUserWidget> AnimWidgetClass;
 	UPROPERTY()
 	class UAimUI* AimWidget;
+	UPROPERTY()
+		TSubclassOf<UUserWidget> MainHUDClass;
+	UPROPERTY()
+		class UMainHUDWidget* MainHUD;
+
 };

@@ -13,11 +13,13 @@ UCLASS()
 class PORTFOLIO_API UMainHUDWidget : public UUserWidget
 {
 	GENERATED_BODY()
-		
+protected:
+	UMainHUDWidget(const FObjectInitializer& ObjectInitializer);
+	virtual void NativeConstruct() override;	
 public:
 	void UpdateHPWidget(float HPpercent);
-protected:
-	virtual void NativeConstruct() override;
+	void UpdateExpWidget(float HPpercent);
+	void SetWeaponImage(uint8 WeaponNum);
 	
 
 private:
@@ -29,5 +31,7 @@ private:
 		class UProgressBar* ExpBar;
 
 	UPROPERTY()
-		class UTextBlock* PlayerLevel;
+		class UImage* WeaponImg;
+	UPROPERTY()
+		TArray<UTexture2D*> WeaponImagArr;
 };

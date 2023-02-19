@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Sword.h"
+#include "MainCharacter.h"
 #include "MainEnemyAIController.h"
 #include "KnightEnemyAnimInstance.h"
 #include "MainHUDWidget.h"
@@ -292,6 +293,7 @@ float AKnightEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		
 	}
 	Cast<UMainHUDWidget>(HPBarWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
+	Cast<AMainCharacter>(DamageCauser)->SetManaPoint(5.f);
 	return FinalDamage;
 }
 

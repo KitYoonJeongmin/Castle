@@ -96,7 +96,7 @@ AMainCharacter::AMainCharacter()
 	//스텟
 	Characterstat = CreateDefaultSubobject<UMainCharacterStatComponent>(TEXT("CHARACTERSTAT"));
 	HealthPoint = 100.f;
-
+	ManaPoint = 0.f;
 	//block sound
 	static ConstructorHelpers::FObjectFinder<USoundBase> BLOCKSOUND(TEXT("SoundWave'/Game/AMyDirectory/Sounds/sword_block.sword_block'"));
 	if (BLOCKSOUND.Succeeded())
@@ -154,15 +154,13 @@ FHitResult AMainCharacter::LineTrace()
 
 	if (HitResult.Actor.IsValid())
 	{
-		AMainGameModeBase* GameMode = Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
-		if (GameMode)
-			GameMode->SetAimColor(true);
+		if (MainGameMode)
+			MainGameMode->SetAimColor(true);
 	}
 	else
 	{
-		AMainGameModeBase* GameMode = Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
-		if (GameMode)
-			GameMode->SetAimColor(false);
+		if (MainGameMode)
+			MainGameMode->SetAimColor(false);
 	}
 
 	return HitResult;
@@ -170,14 +168,14 @@ FHitResult AMainCharacter::LineTrace()
 
 void AMainCharacter::Skill1()
 {
+	if (ManaPoint < 20.f) return;
 	FTimerHandle WaitHandle;
 	float WaitTime = 0.8f; //시간을 설정하고
 	switch (CurrentWeapon)
 	{
 	case EWeapon::Sword:
 		MainAnim->PlaySwordSkill_1Montage();
-
-		
+		ManaPoint -= 20;
 		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
 			{
 				TArray<FHitResult> hits;
@@ -193,6 +191,7 @@ void AMainCharacter::Skill1()
 						if (enemy == nullptr) continue;
 						FDamageEvent DamageEvent;
 						enemy->TakeDamage(12.0f, DamageEvent, GetController(), this);
+						
 					}
 				}
 			}), WaitTime, false);
@@ -203,7 +202,7 @@ void AMainCharacter::Skill1()
 		//애니메이션
 		MainAnim->PlayBowSkill1Montage();
 		Bow->PlayDrawBowMon(true,1);
-
+		ManaPoint -= 20;
 
 		break;
 	}
@@ -212,11 +211,13 @@ void AMainCharacter::Skill1()
 
 void AMainCharacter::Skill2()
 {
+	if (ManaPoint < 20.f) return;
 	switch (CurrentWeapon)
 	{
 	case EWeapon::Sword:
 		MainAnim->PlaySwordSkill_2Montage();
-		
+		ManaPoint -= 20;
+
 		ArmLengthTo = 700.f;
 		FTimerHandle WaitHandle;
 		float WaitTime = 0.6f; //시간을 설정
@@ -305,9 +306,8 @@ void AMainCharacter::ZoomButtonPressed()
 	isZooming = true;
 	MainAnim->isZooming = true;
 	//widget
-	AMainGameModeBase* GameMode = Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
-	if(GameMode)
-		GameMode->AttachAimWidget(false);
+	if(MainGameMode)
+		MainGameMode->AttachAimWidget(false);
 }
 
 void AMainCharacter::ZoomButtonReleased()
@@ -318,9 +318,8 @@ void AMainCharacter::ZoomButtonReleased()
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	isZooming = false;
 	MainAnim->isZooming = false;
-	AMainGameModeBase* GameMode = Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
-	if (GameMode)
-		GameMode->AttachAimWidget(true);
+	if (MainGameMode)
+		MainGameMode->AttachAimWidget(true);
 }
 
 void AMainCharacter::ZoomFunction(float DeltaTime)
@@ -363,7 +362,7 @@ void AMainCharacter::BeginPlay()
 		DefaultFOV = FollowCamera->FieldOfView;
 	}
 	CurrentFOV = DefaultFOV;
-	
+	MainGameMode = Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
 }
 
 void AMainCharacter::SetWeapon(EWeapon Weapon)
@@ -526,6 +525,15 @@ void AMainCharacter::ArrowChangePlus()
 	Bow->SetArrowType();
 }
 
+void AMainCharacter::SetManaPoint(float PlusPoint)
+{
+	ManaPoint += PlusPoint;
+	if (ManaPoint > 100.f)
+	{
+		ManaPoint = 100.f;
+	}
+}
+
 
 
 void AMainCharacter::AttackStartComboState()
@@ -592,11 +600,10 @@ void AMainCharacter::AttackCheck()
 float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,class AController* EventInstigator, AActor* DamageCauser)
 {
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
 	//UE_LOG(LogTemp, Warning, TEXT("Actor: %s took Damage : %f"), *GetName(), FinalDamage);
 	if (IsBlock)
 	{
-		
-		
 		UGameplayStatics::SpawnSoundAtLocation(this, BlockSound, GetActorLocation());
 		
 		return FinalDamage;
@@ -612,6 +619,10 @@ float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 		}
 	}
 	SetActorRelativeLocation(GetActorLocation() + DamageCauser->GetActorRotation().Vector() * 30);
+	
+	//HUD
+	if (MainGameMode)
+		MainGameMode->SetHealthPointHUD(HealthPoint);
 	return FinalDamage;
 }
 
@@ -668,6 +679,14 @@ void AMainCharacter::Tick(float DeltaTime)
 		MainAnim->SetUpperBodyRotation( AddYaw+100.f, TargetRot.Pitch+82.f);
 		
 	}
+
+	//HUD weapon image 
+	if (MainGameMode)
+	{
+		MainGameMode->WeaponChange((uint8)CurrentWeapon);
+		MainGameMode->SetExperiencePointHUD(ManaPoint);
+	}
+		
 }
 
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -784,7 +803,7 @@ void AMainCharacter::UseSword()
 	if (CurrentWeapon == EWeapon::Sword)
 	{
 		MainAnim->JumpToSwordMontageSection(2);
-		
+
 	}
 	else
 	{
