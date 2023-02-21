@@ -20,10 +20,10 @@
 #include "MainGameModeBase.h"
 #include "KnightEnemy.h"
 #include "Arrow.h"
+#include "ClimbingComponent.h"
+#include "Components/SceneComponent.h"
 
 
-
-//#include "Components/SceneComponent.h"
 // Sets default values
 AMainCharacter::AMainCharacter()
 {
@@ -65,8 +65,8 @@ AMainCharacter::AMainCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 260.f, 0.f);
-	GetCharacterMovement()->JumpZVelocity = 450.f;
-	GetCharacterMovement()->AirControl = 0.1f;
+	GetCharacterMovement()->JumpZVelocity = 600.f;
+	GetCharacterMovement()->AirControl = 0.2f;
 
 	// Spring Arm
 	ArmLengthTo = 350.f;
@@ -104,6 +104,9 @@ AMainCharacter::AMainCharacter()
 		BlockSound = BLOCKSOUND.Object;
 	}
 	
+	//오름 움직임
+	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("Climbing"));
+	ClimbingComponent->SetupAttachment(RootComponent);
 }
 
 void AMainCharacter::Shot()
@@ -229,9 +232,7 @@ void AMainCharacter::Skill2()
 				FRotator ForwardRot = FollowCamera->GetComponentRotation();
 				ForwardRot.Pitch = 0.f;
 				FVector ForwardPos = BeforePos + ForwardRot.Vector() * MoveForwardSize;
-				
-
-				
+	
 				FLatentActionInfo Info;
 				Info.CallbackTarget = this;
 				UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), ForwardPos, ForwardRot, false, false, 0.1f, false, EMoveComponentAction::Type::Move, Info);
@@ -388,6 +389,7 @@ void AMainCharacter::SetWeapon(EWeapon Weapon)
 
 void AMainCharacter::MoveForward(float Value)
 {
+	if (ClimbingComponent->isClimbing) return;
 	if ((Controller != nullptr) && (Value != 0.f))
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -402,6 +404,7 @@ void AMainCharacter::MoveForward(float Value)
 
 void AMainCharacter::MoveRight(float Value)
 {
+	if (ClimbingComponent->isClimbing) return;
 	if ((Controller != nullptr) && (Value != 0.f))
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -416,13 +419,53 @@ void AMainCharacter::MoveRight(float Value)
 
 void AMainCharacter::Jump()
 {
-	DisableInput(Cast<APlayerController>(GetController()));
-	MainAnim->PlayRollMontage();
+	if (ClimbingComponent->isInHeight)
+	{
+		if (!(ClimbingComponent->isClimbing))
+		{
+			Super::Jump();
+		}
+		else if (ClimbingComponent->CanJumpLeft && InputComponent->GetAxisValue((FName("MoveRight"))) < 0.f)
+		{
+			ClimbingComponent->JumpLeftLedge();
+		}
+		else if (ClimbingComponent->CanJumpRight && InputComponent->GetAxisValue((FName("MoveRight"))) > 0.f)
+		{
+			ClimbingComponent->JumpRightLedge();
+		}
+		else if(ClimbingComponent->CanJumpUp)
+		{
+			ClimbingComponent->JumpUpLedge();
+		}
+		
+	}
+	else //구르기
+	{
+		FRotator TargetRot = GetControlRotation();
+		TargetRot.Pitch = 0;
+		TargetRot.Roll = 0;
+		DisableInput(Cast<APlayerController>(GetController()));
+		if (InputComponent->GetAxisValue((FName("MoveRight"))) > 0.f)
+		{
+
+			SetActorRotation(TargetRot + FRotator(0.f, 90.f, 0.f));
+		}
+		else if (InputComponent->GetAxisValue((FName("MoveRight"))) < 0.f)
+		{
+			SetActorRotation(TargetRot + FRotator(0.f, -90.f, 0.f));
+		}
+		else if (InputComponent->GetAxisValue((FName("MoveForward"))) < 0.f)
+		{
+			SetActorRotation(TargetRot + FRotator(0.f, -180.f, 0.f));
+		}
+		MainAnim->PlayRollMontage();
+	}
+	
 }
 
 void AMainCharacter::Move(float DeltaTime)
 {
-
+	if (GetMovementComponent()->IsFalling() || GetMovementComponent()->IsFlying()) { MoveDirection.Set(0.0f, 0.0f, 0.0f); return; }
 	//움직일땐 보간
 	MoveDirection.Normalize();
 	if (TargetVelocity != CurrentVelocity)
@@ -454,8 +497,34 @@ void AMainCharacter::Run()
 
 void AMainCharacter::Attack()
 {
+	FHitResult HitResult;
+	FLatentActionInfo Info;
+	Info.CallbackTarget = this;
 	switch (CurrentWeapon)
 	{
+	case EWeapon::Hand:
+		
+		HitResult = LineTrace();
+		
+		if (HitResult.Actor.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.Actor->GetName());
+			AKnightEnemy* Enemy = Cast<AKnightEnemy>(HitResult.Actor);
+			float Distance = FVector::Distance(Enemy->GetActorLocation(), GetActorLocation());
+			float degree = FVector::DotProduct(FollowCamera->GetForwardVector(), Enemy->GetActorForwardVector());
+			if (Distance < 700.f  && degree > 0)
+			{
+				
+				UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), Enemy->GetActorLocation()-Enemy->GetActorRotation().Vector()*200.f, Enemy->GetActorRotation(), false, false, 0.3f, false, EMoveComponentAction::Type::Move, Info);
+				MainAnim->PlayAssassinationMontage();
+				Enemy->GetCharacterMovement()->DisableMovement();
+				Enemy->DisableHPBar();
+				Enemy->PlayAssassination();
+				//FDamageEvent DamageEvent;
+				//Enemy->TakeDamage(100.0f, DamageEvent, GetController(), this);
+			}
+		}
+		break;
 	case EWeapon::Sword:
 		if (IsAttacking)
 		{
@@ -473,11 +542,9 @@ void AMainCharacter::Attack()
 			if (NearEnemy != nullptr)
 			{
 				FVector NearEnemyLoc = NearEnemy->GetActorLocation();
-				FLatentActionInfo Info;
 				FRotator LookRot = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), NearEnemyLoc);
 				FRotator PlayerRot = GetActorRotation();
 				PlayerRot.Yaw = LookRot.Yaw;
-				Info.CallbackTarget = this;
 				UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), GetActorLocation() + GetActorRotation().Vector() * 30, PlayerRot, false, false, 0.3f, false, EMoveComponentAction::Type::Move, Info);
 			}
 			MainAnim->PlayAttackMontage();
@@ -527,10 +594,78 @@ void AMainCharacter::ArrowChangePlus()
 
 void AMainCharacter::SetManaPoint(float PlusPoint)
 {
+
+
 	ManaPoint += PlusPoint;
 	if (ManaPoint > 100.f)
 	{
 		ManaPoint = 100.f;
+	}
+}
+
+class UClimbingComponent* AMainCharacter::GetClimbingComponent()
+{
+	return ClimbingComponent;
+}
+
+void AMainCharacter::ClimbUp()
+{
+	ClimbingComponent->ClimbUp();
+}
+
+void AMainCharacter::ClimbDown()
+{
+	ClimbingComponent->DropDown();
+}
+
+void AMainCharacter::ClimbCornerLeft()
+{
+	
+	if (ClimbingComponent->isClimbing && 
+		!ClimbingComponent->CanJumpLeft && 
+		ClimbingComponent->CanTurnLeft)
+	{
+		ClimbingComponent->IsTurning = true;
+		DisableInput(UGameplayStatics::GetPlayerController(this,0));
+		MainAnim->PlayLeftCornerMontage();
+		FTimerHandle WaitHandle;
+		float WaitTime = 1.0f;
+		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
+			{
+				EnableInput(UGameplayStatics::GetPlayerController(this, 0));
+			}), WaitTime, false);
+		FTimerHandle WaitHandle2;
+		float WaitTime2 = 0.8f;
+		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
+			{
+				ClimbingComponent->IsTurning = false;
+				ClimbingComponent->Hang();
+			}), WaitTime, false);
+	}
+}
+
+void AMainCharacter::ClimbCornerRight()
+{
+	if (ClimbingComponent->isClimbing &&
+		!ClimbingComponent->CanJumpRight &&
+		ClimbingComponent->CanTurnRight)
+	{
+		ClimbingComponent->IsTurning = true;
+		DisableInput(UGameplayStatics::GetPlayerController(this, 0));
+		MainAnim->PlayRightCornerMontage();
+		FTimerHandle WaitHandle;
+		float WaitTime = 1.0f;
+		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
+			{
+				EnableInput(UGameplayStatics::GetPlayerController(this, 0));
+			}), WaitTime, false);
+		FTimerHandle WaitHandle2;
+		float WaitTime2 = 0.8f;
+		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
+			{
+				ClimbingComponent->IsTurning = false;
+				ClimbingComponent->Hang();
+			}), WaitTime, false);
 	}
 }
 
@@ -710,7 +845,12 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		//PlayerInputComponent->BindAction("Hand", IE_Pressed, this, &AMainCharacter::UseHand);
 		PlayerInputComponent->BindAction("Bow", IE_Pressed, this, &AMainCharacter::UseBow);
 		PlayerInputComponent->BindAction("ArrowChangePlus", IE_Pressed, this, &AMainCharacter::ArrowChangePlus);
-		
+		//climb
+		PlayerInputComponent->BindAction("ClimbUp", IE_Pressed, this, &AMainCharacter::ClimbUp);
+		PlayerInputComponent->BindAction("ClimbDown", IE_Pressed, this, &AMainCharacter::ClimbDown);
+		PlayerInputComponent->BindAction("ClimbCornerLeft", IE_Pressed, this, &AMainCharacter::ClimbCornerLeft);
+		PlayerInputComponent->BindAction("ClimbCornerRight", IE_Pressed, this, &AMainCharacter::ClimbCornerRight);
+
 		PlayerInputComponent->BindAxis("MoveForward", this, &AMainCharacter::MoveForward);
 		PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacter::MoveRight);
 		PlayerInputComponent->BindAxis("Turn", this, &AMainCharacter::Turn);

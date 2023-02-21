@@ -15,6 +15,7 @@ DECLARE_MULTICAST_DELEGATE(FOnAttackHitCheckDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnEQUIPDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnsheathDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnRunAIDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnStopAIDelegate);
 
 UCLASS()
 class PORTFOLIO_API UKnightEnemyAnimInstance : public UAnimInstance
@@ -29,6 +30,7 @@ public:
 	void PlaySwordBlockMontage(bool isPaly);
 	void PlayPainMontage();
 	void PlayNuckMontage();
+	void PlayAssassinationAnim();
 	void JumpToAttackMontageSection(int32 NewSection);
 	void JumpToSwordMontageSection(int32 NewSection);
 	FOnNextAttackCheckDelegate OnNextAttackCheck;
@@ -36,6 +38,8 @@ public:
 	FOnEQUIPDelegate OnEQUIP;
 	FOnsheathDelegate Onsheath;
 	FOnRunAIDelegate OnRunAI;
+	FOnStopAIDelegate OnStopAI;
+	
 public:
 	void SetDeadAnim() { IsDead = true; }
 private:
@@ -76,6 +80,8 @@ protected:
 		UAnimMontage* EnemyPainMontage;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Pain, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* EnemyNuckMontage;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Pain, Meta = (AllowPrivateAccess = true))
+		UAnimMontage* AssassinationAnim;
 
 	UFUNCTION()
 		void AnimNotify_AttackHitCheck();
@@ -88,6 +94,8 @@ protected:
 		void AnimNotify_sheath();
 	UFUNCTION()
 		void AnimNotify_RunAI();
+	UFUNCTION()
+		void AnimNotify_StopAI();
 
 	FName GetAttackMontageSectionName(int32 Section);
 

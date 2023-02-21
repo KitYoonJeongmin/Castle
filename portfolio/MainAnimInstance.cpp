@@ -10,11 +10,12 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/World.h"
 #include "MainCharacter.h"
+#include "ClimbingComponent.h"
 
 UMainAnimInstance::UMainAnimInstance()
 {
 	CurrentPawnSpeed = 0.0f;
-	IKInterpSpeed = 13.0;
+	IKInterpSpeed = 70.0;
 	IsDead = false;
 	isZooming = false;
 	isAimming = false;
@@ -86,6 +87,36 @@ UMainAnimInstance::UMainAnimInstance()
 	{
 		BowSkill1 = BowSkill1_MONTAGE.Object;
 	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ASSASSINATION_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/Mon_Stealth_Assassination.Mon_Stealth_Assassination'"));
+	if (ASSASSINATION_MONTAGE.Succeeded())
+	{
+		Assassination = ASSASSINATION_MONTAGE.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ClimbJumpLeft_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/ClimbingAnimations/Mon_JumpLeftMain.Mon_JumpLeftMain'"));
+	if (ClimbJumpLeft_MONTAGE.Succeeded())
+	{
+		ClimbJumpLeft = ClimbJumpLeft_MONTAGE.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ClimbJumpRight_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/ClimbingAnimations/Mon_JumpRightMain.Mon_JumpRightMain'"));
+	if (ClimbJumpRight_MONTAGE.Succeeded())
+	{
+		ClimbJumpRight = ClimbJumpRight_MONTAGE.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> CornerLeft_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/ClimbingAnimations/Mon_MainCornerLEft.Mon_MainCornerLEft'"));
+	if (CornerLeft_MONTAGE.Succeeded())
+	{
+		CornerLeft = CornerLeft_MONTAGE.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> CornerRight_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/ClimbingAnimations/Mon_MainCornerRight.Mon_MainCornerRight'"));
+	if (CornerRight_MONTAGE.Succeeded())
+	{
+		CornerRight = CornerRight_MONTAGE.Object;
+	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ClimbJumpUp_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/ClimbingAnimations/Jump_Up_MontageMain.Jump_Up_MontageMain'"));
+	if (ClimbJumpUp_MONTAGE.Succeeded())
+	{
+		ClimbJumpUp = ClimbJumpUp_MONTAGE.Object;
+	}
 	
 }
 
@@ -113,6 +144,13 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		FRotator Degree = FMath::RInterpTo(CurrentRot, TargetRot, DeltaSeconds, 15.f);
 		AimPitch = FMath::Clamp(Degree.Pitch, -60.f, 60.f);
 		AimYaw = FMath::Clamp(Degree.Yaw, -60.f, 60.f);
+
+		//climb
+		CanMoveLeft = Character->GetClimbingComponent()->CanMoveLeft;
+		CanMoveRight = Character->GetClimbingComponent()->CanMoveRight;
+		IsMovingLeft = Character->GetClimbingComponent()->IsMovingLeft;
+		IsMovingRight = Character->GetClimbingComponent()->IsMovingRight;
+		IsClimbing = Character->GetClimbingComponent()->isClimbing;
 	}
 
 }
@@ -142,6 +180,24 @@ void UMainAnimInstance::PlayBowSkill1Montage()
 {
 	check(!IsDead);
 	Montage_Play(BowSkill1, 1.f);
+}
+
+void UMainAnimInstance::PlayAssassinationMontage()
+{
+	check(!IsDead);
+	Montage_Play(Assassination, 1.f);
+}
+
+void UMainAnimInstance::PlayLeftCornerMontage()
+{
+	check(!IsDead);
+	Montage_Play(CornerLeft, 1.f);
+}
+
+void UMainAnimInstance::PlayRightCornerMontage()
+{
+	check(!IsDead);
+	Montage_Play(CornerRight, 1.f);
 }
 
 void UMainAnimInstance::PlayAttackMontage()
@@ -176,12 +232,12 @@ void UMainAnimInstance::PlaySwordSkill_1Montage()
 	check(!IsDead);
 	Montage_Play(SwordSkill_1Montage, 1.f);
 
-	FTimerHandle WaitHandle;
-	float WaitTime = 0.8f; //시간을 설정하고
-	GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
-		{
-			GetWorld()->GetFirstPlayerController()->ClientPlayCameraShake(CameraShacke);
-		}), WaitTime, false);
+	//FTimerHandle WaitHandle;
+	//float WaitTime = 0.8f; //시간을 설정하고
+	//GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
+	//	{
+	//		GetWorld()->GetFirstPlayerController()->ClientPlayCameraShake(CameraShacke);
+	//	}), WaitTime, false);
 	
 }
 
@@ -282,7 +338,7 @@ TTuple<bool, float> UMainAnimInstance::CapsuleDistance(FName SocketName, ACharac
 	const FVector WorldLocation{ Char->GetMesh()->GetComponentLocation() };
 	const FVector BreakVector{ WorldLocation + FVector(0.f,0.f,98.f) };
 
-	const FVector SocketLocation{ Char->GetMesh()->GetSocketLocation(SocketName) };
+	const FVector SocketLocation{ Char->GetMesh()->GetBoneLocation(SocketName) };
 
 	const FVector Start{ SocketLocation.X,SocketLocation.Y,BreakVector.Z };
 	const FVector End{ Start - FVector(0.f,0.f,151.f) };
@@ -296,7 +352,7 @@ TTuple<bool, float> UMainAnimInstance::CapsuleDistance(FName SocketName, ACharac
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		true,
 		IgnoreActors,
-		EDrawDebugTrace::None,
+		EDrawDebugTrace::ForOneFrame,
 		HitResult,
 		false);
 
@@ -321,7 +377,7 @@ TTuple<bool, float, FVector> UMainAnimInstance::FootLineTrace(FName SocketName, 
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		true,
 		IgnoreActors,
-		EDrawDebugTrace::None,
+		EDrawDebugTrace::ForOneFrame,
 		HitResult,
 		false);
 
@@ -392,8 +448,48 @@ void UMainAnimInstance::AnimNotify_BowSkill1()
 {
 	OnBowSkill1.Broadcast();
 }
+void UMainAnimInstance::AnimNotify_ClimbEnd()
+{
+	OnClimbEnd.Broadcast();
+}
+void UMainAnimInstance::AnimNotify_JumpLeftEnd()
+{
+	Montage_Stop(0.1f);
+	Character->GetClimbingComponent()->JumpLeft(false);
+	IsJumpLeft = false;
+}
+void UMainAnimInstance::AnimNotify_JumpRightEnd()
+{
+	Montage_Stop(0.1f);
+	Character->GetClimbingComponent()->JumpRight(false);
+	IsJumpRight = false;
+}
+void UMainAnimInstance::AnimNotify_JumpUpEnd()
+{
+	Montage_Stop(0.1f);
+	Character->GetClimbingComponent()->JumpUp(false);
+}
 FName UMainAnimInstance::GetAttackMontageSectionName(int32 Section)
 {
 	check(FMath::IsWithinInclusive<int32>(Section, 1,3));
 	return FName(*FString::Printf(TEXT("Attack%d"), Section));
+}
+
+void UMainAnimInstance::JumpLeft(bool isJumpLeft)
+{
+	IsJumpLeft = isJumpLeft;
+	Montage_Play(ClimbJumpLeft, 1.0f);
+}
+
+void UMainAnimInstance::JumpRight(bool isJumpRight)
+{
+	IsJumpRight = isJumpRight;
+	Montage_Play(ClimbJumpRight, 1.0f);
+}
+
+void UMainAnimInstance::JumpUp(bool jumpUp)
+{
+	IsJumpUp = jumpUp;
+	Montage_Play(ClimbJumpUp, 1.f);
+
 }

@@ -48,6 +48,10 @@ public:
 
 	void Block();
 	bool IsSetWeapon() { return IsWeapon; }
+	//암살
+	void PlayAssassination();
+	//hp bar visible
+	void DisableHPBar();
 public:
 	UFUNCTION()
 		/**ai가 다음 동작을 할 수 있도록 공격 montage가 끝났음을 알려줌 OnMontageEnded.AddDynamic의 인자로 사용*/

@@ -128,12 +128,25 @@ public:
 	UFUNCTION()
 		void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 public:
+	
 	UFUNCTION()
+		/**화살 변경*/
 		void ArrowChangePlus();
 	UFUNCTION()
 		void SetManaPoint(float PlusPoint);
-	
+public:
+	class UClimbingComponent* GetClimbingComponent();
+	/**벽오르기*/
+	void ClimbUp();
+	/**벽 내리기*/
+	void ClimbDown();
+	/**코너왼쪽*/
+	void ClimbCornerLeft();
+	/**코너오른쪽*/
+	void ClimbCornerRight();
 protected:
+	UPROPERTY(VisibleAnywhere)
+		class UClimbingComponent* ClimbingComponent;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 		bool IsAttacking;
 	UPROPERTY()

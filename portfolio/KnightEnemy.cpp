@@ -136,6 +136,12 @@ void AKnightEnemy::PostInitializeComponents()
 		{
 			Cast<AMainEnemyAIController>(GetController())->StartAI();
 		}});
+	EnemyAnim->OnStopAI.AddLambda([this]()->void {
+		if (GetController() != nullptr)
+		{
+			Cast<AMainEnemyAIController>(GetController())->StopAI();
+			GetCharacterMovement()->DisableMovement();
+		}});
 }
 
 void AKnightEnemy::Attack()
@@ -254,6 +260,16 @@ void AKnightEnemy::Block()
 	EnemyAnim->PlaySwordBlockMontage(IsBlock);
 }
 
+void AKnightEnemy::PlayAssassination()
+{
+	EnemyAnim->PlayAssassinationAnim();
+}
+
+void AKnightEnemy::DisableHPBar()
+{
+	HPBarWidget->SetVisibility(false);
+}
+
 void AKnightEnemy::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if ((Montage->GetName()).Contains("Attack") &&IsAttacking)
@@ -276,6 +292,7 @@ float AKnightEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		EnemyAnim->SetDeadAnim();
 		GetController()->UnPossess();
 		SetActorEnableCollision(false);
+		DisableHPBar();
 	}
 	else 
 	{ 
@@ -293,7 +310,7 @@ float AKnightEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		
 	}
 	Cast<UMainHUDWidget>(HPBarWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
-	Cast<AMainCharacter>(DamageCauser)->SetManaPoint(5.f);
+	Cast<AMainCharacter>(UGameplayStatics::GetPlayerPawn(this,0))->SetManaPoint(5.f);
 	return FinalDamage;
 }
 

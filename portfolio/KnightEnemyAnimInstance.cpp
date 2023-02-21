@@ -39,6 +39,11 @@ UKnightEnemyAnimInstance::UKnightEnemyAnimInstance()
 	{
 		EnemyNuckMontage = NUCK_MONTAGE.Object;
 	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ASSASSINATION_ANIM(TEXT("AnimMontage'/Game/AMyDirectory/Enemy/Animations/Mon_Stealth_Assassination_Enemy.Mon_Stealth_Assassination_Enemy'"));
+	if (ASSASSINATION_ANIM.Succeeded())
+	{
+		AssassinationAnim = ASSASSINATION_ANIM.Object;
+	}
 	
 }
 
@@ -82,6 +87,11 @@ void UKnightEnemyAnimInstance::PlayNuckMontage()
 {
 	check(!IsDead);
 	Montage_Play(EnemyNuckMontage, 1.f);
+}
+void UKnightEnemyAnimInstance::PlayAssassinationAnim()
+{
+	check(!IsDead);
+	Montage_Play(AssassinationAnim, 1.f);
 }
 void UKnightEnemyAnimInstance::JumpToAttackMontageSection(int32 NewSection)
 {
@@ -223,6 +233,11 @@ void UKnightEnemyAnimInstance::AnimNotify_sheath()
 void UKnightEnemyAnimInstance::AnimNotify_RunAI()
 {
 	OnRunAI.Broadcast();
+}
+
+void UKnightEnemyAnimInstance::AnimNotify_StopAI()
+{
+	OnStopAI.Broadcast();
 }
 
 FName UKnightEnemyAnimInstance::GetAttackMontageSectionName(int32 Section)

@@ -17,6 +17,7 @@ DECLARE_MULTICAST_DELEGATE(FOnEQUIPDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnsheathDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnBowFireDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnBowSkill1Delegate);
+DECLARE_MULTICAST_DELEGATE(FOnClimbEndDelegate);
 
 UCLASS()
 class PORTFOLIO_API UMainAnimInstance : public UAnimInstance
@@ -43,6 +44,12 @@ public:
 	void PlayBowShotMontage();
 	void PlayBowSkill1Montage();
 
+	void PlayAssassinationMontage();
+
+	void PlayLeftCornerMontage();
+	void PlayRightCornerMontage();
+
+
 	void JumpToAttackMontageSection(int32 NewSection);
 	void JumpToSwordMontageSection(int32 NewSection);
 	FOnNextAttackCheckDelegate OnNextAttackCheck;
@@ -51,6 +58,7 @@ public:
 	FOnsheathDelegate Onsheath;
 	FOnBowFireDelegate OnBowFire;
 	FOnBowSkill1Delegate OnBowSkill1;
+	FOnClimbEndDelegate OnClimbEnd;
 	
 public:
 	void SetDeadAnim() { IsDead = true; }
@@ -111,16 +119,33 @@ protected:
 		UAnimMontage* RollMontage;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Move, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* Turn90Montage;
+
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Sword, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* SwordSkill_1Montage;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Sword, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* SwordSkill_2Montage;
+
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* DrawBowMontage;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* ShotBowMontage;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* BowSkill1;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Hand, Meta = (AllowPrivateAccess = true))
+		UAnimMontage* Assassination;
+	
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+		UAnimMontage* ClimbJumpLeft;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+		UAnimMontage* ClimbJumpRight;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+		UAnimMontage* CornerLeft;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+		UAnimMontage* CornerRight;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+		UAnimMontage* ClimbJumpUp;
 
 	//Bow
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
@@ -155,6 +180,14 @@ protected:
 		void AnimNotify_BowFire();
 	UFUNCTION()
 		void AnimNotify_BowSkill1();
+	UFUNCTION()
+		void AnimNotify_ClimbEnd();
+	UFUNCTION()
+		void AnimNotify_JumpLeftEnd();
+	UFUNCTION()
+		void AnimNotify_JumpRightEnd();
+	UFUNCTION()
+		void AnimNotify_JumpUpEnd();
 
 	FName GetAttackMontageSectionName(int32 Section);
 
@@ -165,9 +198,26 @@ protected:
 		float UpperBodyRotationYaw;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
 		float UpperBodyRotationPitch;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+	bool CanMoveLeft = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+	bool CanMoveRight = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+	bool IsMovingLeft = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+	bool IsMovingRight = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
+		bool IsClimbing = false;
 	
-	
+public:
+	void JumpLeft(bool isJumpLeft);
+	void JumpRight(bool isJumpRight);
+	void JumpUp(bool jumpUp);
 
+private:
+	bool IsJumpRight = false;
+	bool IsJumpLeft = false;
+	bool IsJumpUp = false;
 
 
 
