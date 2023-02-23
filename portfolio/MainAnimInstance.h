@@ -208,12 +208,16 @@ protected:
 	bool IsMovingRight = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
 		bool IsClimbing = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Crouch, Meta = (AllowPrivateAccess = true))
+		bool IsCrouch = false;
 	
 public:
 	void JumpLeft(bool isJumpLeft);
 	void JumpRight(bool isJumpRight);
 	void JumpUp(bool jumpUp);
 
+public:
+	void SetCrouch(bool isCrouch) { IsCrouch = isCrouch; }
 private:
 	bool IsJumpRight = false;
 	bool IsJumpLeft = false;

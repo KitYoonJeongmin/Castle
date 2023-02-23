@@ -7,8 +7,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Engine/EngineTypes.h"
 #include "DrawDebugHelpers.h"
 #include "MainAnimInstance.h"
+
 
 // Sets default values for this component's properties
 UClimbingComponent::UClimbingComponent()
@@ -129,7 +131,7 @@ void UClimbingComponent::ForwardTrace()
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Character);
-	isInForward = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), CharLoc, (CharFor * 130.f) + CharLoc, 10.f, ETraceTypeQuery::TraceTypeQuery3,
+	isInForward = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), CharLoc, (CharFor * 130.f) + CharLoc, 10.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true);
 	if (isInForward)
 	{
@@ -147,7 +149,7 @@ void UClimbingComponent::HeightTrace()
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Character);
-	isInHeight = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), CharLoc + FVector(0.f, 0.f, 500.f) + CharFor * 75.f, (CharFor * 75.f) + CharLoc, 10.f, ETraceTypeQuery::TraceTypeQuery3,
+	isInHeight = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), CharLoc + FVector(0.f, 0.f, 500.f) + CharFor * 75.f, (CharFor * 75.f) + CharLoc, 10.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true); 
 
 	if (isInHeight)
@@ -207,7 +209,7 @@ void UClimbingComponent::LeftTrace()
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Character);
-	CanMoveLeft = UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), LeftClimbArrow->GetComponentLocation(), LeftClimbArrow->GetComponentLocation(), 30.f,60.f, ETraceTypeQuery::TraceTypeQuery3,
+	CanMoveLeft = UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), LeftClimbArrow->GetComponentLocation(), LeftClimbArrow->GetComponentLocation(), 30.f,60.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true);
 
 	
@@ -218,7 +220,7 @@ void UClimbingComponent::RightTrace()
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Character);
-	CanMoveRight = UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), RightClimbArrow->GetComponentLocation(), RightClimbArrow->GetComponentLocation(), 30.f, 60.f, ETraceTypeQuery::TraceTypeQuery3,
+	CanMoveRight = UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), RightClimbArrow->GetComponentLocation(), RightClimbArrow->GetComponentLocation(), 30.f, 60.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true);
 }
 
@@ -260,7 +262,7 @@ void UClimbingComponent::JumpLeftTrace()
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Character);
-	if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), LeftLedgeArrow->GetComponentLocation(), LeftLedgeArrow->GetComponentLocation(), 30.f, 60.f, ETraceTypeQuery::TraceTypeQuery3,
+	if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), LeftLedgeArrow->GetComponentLocation(), LeftLedgeArrow->GetComponentLocation(), 30.f, 60.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
 	{
 		CanJumpLeft = !CanMoveLeft;
@@ -276,7 +278,7 @@ void UClimbingComponent::JumpRightTrace()
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Character);
-	if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), RightLedgeArrow->GetComponentLocation(), RightLedgeArrow->GetComponentLocation(), 30.f, 60.f, ETraceTypeQuery::TraceTypeQuery3,
+	if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), RightLedgeArrow->GetComponentLocation(), RightLedgeArrow->GetComponentLocation(), 30.f, 60.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
 	{
 		CanJumpRight = !CanMoveRight;
@@ -364,7 +366,7 @@ void UClimbingComponent::TurnLeftTrace()
 	FVector StartVec(LeftClimbArrow->GetComponentLocation());
 	StartVec.Z += 60.f;
 	FVector EndVec = StartVec + LeftClimbArrow->GetForwardVector() * 70.f;
-	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartVec, EndVec, 30.f, ETraceTypeQuery::TraceTypeQuery3,
+	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartVec, EndVec, 30.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
 	{
 		CanTurnLeft = false;
@@ -386,7 +388,7 @@ void UClimbingComponent::TurnRightTrace()
 	FVector StartVec(RightClimbArrow->GetComponentLocation());
 	StartVec.Z += 60.f;
 	FVector EndVec = StartVec + RightClimbArrow->GetForwardVector() * 70.f;
-	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartVec, EndVec, 30.f, ETraceTypeQuery::TraceTypeQuery3,
+	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartVec, EndVec, 30.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
 	{
 		CanTurnRight = false;
@@ -402,7 +404,7 @@ void UClimbingComponent::JumpUpTrace()
 	FHitResult HitResult;
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(Character);
-	if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), UpArrow->GetComponentLocation(), UpArrow->GetComponentLocation(), 30.f, 100.f, ETraceTypeQuery::TraceTypeQuery3,
+	if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), UpArrow->GetComponentLocation(), UpArrow->GetComponentLocation(), 30.f, 100.f, UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_GameTraceChannel4),
 		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
 	{
 		CanJumpUp = true;

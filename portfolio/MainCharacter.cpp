@@ -67,6 +67,7 @@ AMainCharacter::AMainCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 260.f, 0.f);
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = 0.2f;
+	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
 
 	// Spring Arm
 	ArmLengthTo = 350.f;
@@ -74,7 +75,7 @@ AMainCharacter::AMainCharacter()
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 450.f;
 	CameraBoom->bUsePawnControlRotation = true;
-
+	CameraBoom->bEnableCameraLag = true;
 	// Camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
@@ -325,26 +326,24 @@ void AMainCharacter::ZoomButtonReleased()
 
 void AMainCharacter::ZoomFunction(float DeltaTime)
 {
-	FVector TargetOffset(0.f,0.f,60.f);
+	FVector TargetOffset;
+	if(GetCharacterMovement()->IsCrouching())
+		TargetOffset = FVector(0.f, 0.f, CrouchedEyeHeight+50.f);
+	else
+		TargetOffset = FVector(0.f, 0.f, BaseEyeHeight);
 	if (isZooming)
 	{
 		TargetOffset.Y = 40.f;
 		ArmLengthTo = ZoomCL;
 		CurrentFOV = FMath::FInterpTo(CurrentFOV, ZoomFOV, DeltaTime, ZoomSpeed);
-		
-		//CurrentCL = FMath::FInterpTo(CurrentCL, ZoomCL, DeltaTime, ZoomSpeed);
 	}
 	else
 	{
 		TargetOffset.Y = 0.f;
 		ArmLengthTo = DefaultCL;
 		CurrentFOV = FMath::FInterpTo(CurrentFOV, DefaultFOV, DeltaTime, ZoomSpeed);
-		//CurrentCL = FMath::FInterpTo(CurrentCL, DefaultCL, DeltaTime, ZoomSpeed);
 	}
-	//FollowCamera->SetFieldOfView(CurrentFOV);
 
-	//FVector UpdateVector(0.f, CurrentCL, 40.f);
-	//UpdateVector.Y = CurrentCL;
 	CameraBoom->SocketOffset = (TargetOffset);
 
 }
@@ -484,15 +483,6 @@ void AMainCharacter::Turn(float Rate)
 void AMainCharacter::LookUp(float Rate)
 {
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
-}
-
-void AMainCharacter::Run()
-{
-	
-	if (TargetVelocity <150.f)
-		TargetVelocity = 150.0f;
-	else
-		TargetVelocity = 70.f;
 }
 
 void AMainCharacter::Attack()
@@ -669,6 +659,16 @@ void AMainCharacter::ClimbCornerRight()
 	}
 }
 
+void AMainCharacter::ToggleCrouch()
+{
+	if (CurrentWeapon == EWeapon::Sword) { return; }
+	
+	if (!GetCharacterMovement()->IsCrouching()) { Crouch(); }
+	else { UnCrouch(); }
+	
+	MainAnim->SetCrouch(GetCharacterMovement()->IsCrouching());
+}
+
 
 
 void AMainCharacter::AttackStartComboState()
@@ -830,8 +830,8 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 		PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMainCharacter::Jump);
-		PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AMainCharacter::Run);
-		PlayerInputComponent->BindAction("Run", IE_Released, this, &AMainCharacter::Run);
+		PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AMainCharacter::SetRunSpeed);
+		PlayerInputComponent->BindAction("Run", IE_Released, this, &AMainCharacter::SetWalkSpeed);
 		PlayerInputComponent->BindAction("DefaultAttack", IE_Pressed, this, &AMainCharacter::Attack);
 		PlayerInputComponent->BindAction("DefaultAttack", IE_Released, this, &AMainCharacter::AttackRelease);
 		PlayerInputComponent->BindAction("Block", IE_Pressed, this, &AMainCharacter::Block);
@@ -850,6 +850,8 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		PlayerInputComponent->BindAction("ClimbDown", IE_Pressed, this, &AMainCharacter::ClimbDown);
 		PlayerInputComponent->BindAction("ClimbCornerLeft", IE_Pressed, this, &AMainCharacter::ClimbCornerLeft);
 		PlayerInputComponent->BindAction("ClimbCornerRight", IE_Pressed, this, &AMainCharacter::ClimbCornerRight);
+		//Crouch
+		PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMainCharacter::ToggleCrouch);
 
 		PlayerInputComponent->BindAxis("MoveForward", this, &AMainCharacter::MoveForward);
 		PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacter::MoveRight);
@@ -939,6 +941,10 @@ void AMainCharacter::SwitchWeapon(AActor* NewWeapon, FName WeaponSocket)
 void AMainCharacter::UseSword()
 {
 	if (isZooming) return;
+	if (GetCharacterMovement()->IsCrouching())
+	{
+		ToggleCrouch();
+	}
 	MainAnim->PlayDrawSwordMontage();
 	if (CurrentWeapon == EWeapon::Sword)
 	{
@@ -949,16 +955,18 @@ void AMainCharacter::UseSword()
 	{
 		SetWeapon(EWeapon::Sword);
 	}
+	
+	
 }
 
 void AMainCharacter::UseBow()
 {
 	if (isZooming) return;
+
 	MainAnim->PlayDrawBowMontage();
 	if (CurrentWeapon == EWeapon::Bow)
 	{
 		MainAnim->JumpToSwordMontageSection(2);
-
 	}
 	else
 	{

@@ -16,7 +16,7 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	EBTNodeResult::Type Result = Super::ExecuteTask(OwnerComp, NodeMemory);
 
 	auto KnightEnemy = Cast<AKnightEnemy>(OwnerComp.GetAIOwner()->GetPawn());
-	if (nullptr == KnightEnemy)
+	if (nullptr == KnightEnemy || !KnightEnemy->IsSetWeapon())
 		return EBTNodeResult::Failed;
 
 

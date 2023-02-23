@@ -116,7 +116,8 @@ public:
 	void LookUp(float Rate);
 
 	/**Shift 입력시*/
-	void Run();
+	void SetRunSpeed() { TargetVelocity = 150.0f; }
+	void SetWalkSpeed(){ TargetVelocity = 70.0f; }
 
 	void Shot();
 	FHitResult LineTrace();
@@ -144,6 +145,10 @@ public:
 	void ClimbCornerLeft();
 	/**코너오른쪽*/
 	void ClimbCornerRight();
+
+public:
+	void ToggleCrouch();
+
 protected:
 	UPROPERTY(VisibleAnywhere)
 		class UClimbingComponent* ClimbingComponent;
@@ -195,4 +200,5 @@ private:
 	class AArrow* Arrow;
 	uint8 ArrowType=0;
 	class AMainGameModeBase* MainGameMode;
+
 };

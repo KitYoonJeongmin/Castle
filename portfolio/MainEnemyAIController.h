@@ -24,10 +24,12 @@ public:
 	static const FName TargetKey;
 	static const FName CanSeePlayerKey;
 	static const FName IsDeadKey;
+	static const FName DetectLevelKey;
 	void StopAI();
 	void StartAI();
 
-
+	void StartDetect();
+	void EndDetect();
 	
 
 public:
@@ -37,15 +39,15 @@ public:
 	//AI Perception º¯¼ö
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AISightRadius = 1500.f;
+		float AISightRadius =1100.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AILoseSightRadius = 50.f;
+		float AILoseSightRadius = 0.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AIFieldOfView = 90.f;
+		float AIFieldOfView = 45.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float AISightAge = 5.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AILastSeenLocation = 900.f;
+		float AILastSeenLocation = 0.f;
 private:
 	UPROPERTY()
 		class UBehaviorTree* BTAsset;
@@ -54,8 +56,15 @@ private:
 	UPROPERTY()
 		class AKnightEnemy* KnightEnemy;
 
+
 protected:
+
+	virtual void Tick(float DeltaSeconds) override;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = AIPerception)
 		class UAISenseConfig_Sight* SightConfig;
+
+private:
+	bool isDetect = false;
+	float DetectLevel = 0.f;
 };

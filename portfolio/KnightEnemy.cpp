@@ -69,12 +69,24 @@ AKnightEnemy::AKnightEnemy()
 	HPBarWidget->SetRelativeLocation(FVector(0, 0, 120.f));
 	HPBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 
+	DetectWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("DETECTBARWIDGET"));
+	DetectWidget->SetupAttachment(HPBarWidget);
+	DetectWidget->SetRelativeLocation(FVector(0, 0, 10.f));
+	DetectWidget->SetWidgetSpace(EWidgetSpace::Screen);
+
 	static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("WidgetBlueprint'/Game/AMyDirectory/UI/UI_EnemyHP.UI_EnemyHP_C'"));
 	if (UI_HUD.Succeeded())
 	{
 		HPBarWidget->SetWidgetClass(UI_HUD.Class);
 		HPBarWidget->SetDrawSize(FVector2D(100,15));
 	}
+	static ConstructorHelpers::FClassFinder<UUserWidget> Detect_HUD(TEXT("WidgetBlueprint'/Game/AMyDirectory/UI/UI_EnemyDetect.UI_EnemyDetect_C'"));
+	if (Detect_HUD.Succeeded())
+	{
+		DetectWidget->SetWidgetClass(Detect_HUD.Class);
+		DetectWidget->SetDrawSize(FVector2D(100, 15));
+	}
+	
 	
 }
 
@@ -86,6 +98,7 @@ void AKnightEnemy::BeginPlay()
 	SetWeapon(Sword, TEXT("sword_lSocket"));
 	
 	Cast<UMainHUDWidget>(HPBarWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
+	EnableDetectBar(false);
 }
 
 // Called every frame
@@ -268,6 +281,16 @@ void AKnightEnemy::PlayAssassination()
 void AKnightEnemy::DisableHPBar()
 {
 	HPBarWidget->SetVisibility(false);
+}
+
+void AKnightEnemy::EnableDetectBar(bool isEnable)
+{
+	DetectWidget->SetVisibility(isEnable);
+}
+
+void AKnightEnemy::UpdateDetectBar(float DetectLevel)
+{
+	Cast<UMainHUDWidget>(DetectWidget->GetUserWidgetObject())->UpdateHPWidget(DetectLevel);
 }
 
 void AKnightEnemy::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)

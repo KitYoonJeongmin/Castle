@@ -10,11 +10,11 @@
  * 
  */
 UCLASS()
-class PORTFOLIO_API UBTService_Detect : public UBTService
+class PORTFOLIO_API UBTService_IsInRange : public UBTService
 {
 	GENERATED_BODY()
 public:
-	UBTService_Detect();
+	UBTService_IsInRange();
 
 protected:
 	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;

@@ -2,10 +2,11 @@
 
 
 #include "BTDecorator_IsInAttackRange.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "MainEnemyAIController.h"
 #include "KnightEnemy.h"
 #include "MainCharacter.h"
-#include "BehaviorTree/BlackboardComponent.h"
 
 UBTDecorator_IsInAttackRange::UBTDecorator_IsInAttackRange()
 {
@@ -14,16 +15,20 @@ UBTDecorator_IsInAttackRange::UBTDecorator_IsInAttackRange()
 
 bool UBTDecorator_IsInAttackRange::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
 {
-	bool bResult = Super::CalculateRawConditionValue(OwnerComp, NodeMemory);
 
-	auto ControllingPawn = OwnerComp.GetAIOwner()->GetPawn();
+	bool bResult = Super::CalculateRawConditionValue(OwnerComp, NodeMemory);
+	AKnightEnemy* ControllingPawn = Cast<AKnightEnemy>(OwnerComp.GetAIOwner()->GetCharacter());
 	if (nullptr == ControllingPawn)
 		return false;
-
 	auto Target = Cast<AMainCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(AMainEnemyAIController::TargetKey));
 	if (nullptr == Target)
 		return false;
 
-	bResult = (Target->GetDistanceTo(ControllingPawn) <= 300.0f);
+	bResult = (Target->GetDistanceTo(ControllingPawn) <= 200.0f);
+	if (bResult)
+	{
+		ControllingPawn->GetCharacterMovement()->MaxWalkSpeed = 200.f;
+	}
+
 	return bResult;
 }

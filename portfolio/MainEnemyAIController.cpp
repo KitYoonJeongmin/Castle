@@ -19,6 +19,7 @@ const FName AMainEnemyAIController::PatrolPosKey(TEXT("PatrolPos"));
 const FName AMainEnemyAIController::TargetKey(TEXT("Target"));
 const FName AMainEnemyAIController::CanSeePlayerKey(TEXT("CanSeePlayer"));
 const FName AMainEnemyAIController::IsDeadKey(TEXT("IsDead"));
+const FName AMainEnemyAIController::DetectLevelKey(TEXT("DetectLevel"));
 
 
 AMainEnemyAIController::AMainEnemyAIController()
@@ -69,7 +70,6 @@ void AMainEnemyAIController::OnPossess(APawn* InPawn)
 	if (Cast<AKnightEnemy>(InPawn))
 	{
 		KnightEnemy = Cast<AKnightEnemy>(InPawn);
-		
 	}
 	else
 	{
@@ -102,39 +102,84 @@ void AMainEnemyAIController::StartAI()
 	}
 }
 
+
+
 void AMainEnemyAIController::OnTargetDetected(AActor* actor, FAIStimulus const Stimulus)
 {
 	if (Blackboard->GetValueAsBool(IsDeadKey)) return;
 	if (auto const player = Cast<AMainCharacter>(actor))
 	{
-		
-		if (!KnightEnemy->IsSetWeapon())
-		{
-			KnightEnemy->UseSword();
-		}
-		if (Stimulus.WasSuccessfullySensed())
-		{
-			KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = 400.f;
-
-		}
-		//성공적으로 감지하면 블랙보드에 bool값을 넣어준다.
-		Blackboard->SetValueAsBool(CanSeePlayerKey, Stimulus.WasSuccessfullySensed());
+		UE_LOG(LogTemp, Warning, TEXT("====Detect!!==="));
+		StartDetect();
 		Blackboard->SetValueAsObject(TargetKey, player);
-
 	}
 	if(!Stimulus.WasSuccessfullySensed())
 	{
-		Blackboard->SetValueAsObject(TargetKey, nullptr);
-		if (KnightEnemy->IsSetWeapon())
-		{
-			KnightEnemy->UseSword();
-		}
-		KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = 200.f;
+		UE_LOG(LogTemp, Warning, TEXT("====Sense was Unsuccessfully==="));
+		EndDetect();
 	}
-	
 }
 
+void AMainEnemyAIController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
 
+	if (isDetect && DetectLevel < 100.f)
+	{
+		DetectLevel += DeltaSeconds*30.f;
+		if (DetectLevel >= 100.f) 
+		{ 
+			DetectLevel = 100.f; 
+			if (!KnightEnemy->IsSetWeapon())
+			{
+				KnightEnemy->UseSword();
+			}
+		}
+		
+	}
+	else if ((!isDetect) && DetectLevel > 0.f)
+	{
+		DetectLevel -= DeltaSeconds * 30.f;
+		if (DetectLevel <= 0.f) 
+		{ 
+			DetectLevel = 0.f; 
+			KnightEnemy->EnableDetectBar(false);
+			if (KnightEnemy->IsSetWeapon())
+			{
+				KnightEnemy->UseSword();
+			}
+
+			//성공적으로 감지하면 블랙보드에 bool값을 넣어준다.
+			Blackboard->SetValueAsBool(CanSeePlayerKey, false);
+			Blackboard->SetValueAsObject(TargetKey, nullptr);
+		}
+
+	}
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), DetectLevel);
+	KnightEnemy->UpdateDetectBar(DetectLevel);
+	Blackboard->SetValueAsFloat(DetectLevelKey, DetectLevel);
+}
+
+void AMainEnemyAIController::StartDetect()
+{
+	if (!isDetect)
+	{
+		KnightEnemy->EnableDetectBar(true);
+		isDetect = true;
+	}
+	//성공적으로 감지하면 블랙보드에 bool값을 넣어준다.
+	Blackboard->SetValueAsBool(CanSeePlayerKey, true);
+
+}
+
+void AMainEnemyAIController::EndDetect()
+{
+	if (isDetect)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("====Detect:fasle==="));
+		isDetect = false;
+	}
+}
 
 
 

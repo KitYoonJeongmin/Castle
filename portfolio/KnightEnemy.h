@@ -52,6 +52,9 @@ public:
 	void PlayAssassination();
 	//hp bar visible
 	void DisableHPBar();
+
+	void EnableDetectBar(bool isEnable);
+	void UpdateDetectBar(float DetectLevel);
 public:
 	UFUNCTION()
 		/**ai가 다음 동작을 할 수 있도록 공격 montage가 끝났음을 알려줌 OnMontageEnded.AddDynamic의 인자로 사용*/
@@ -83,5 +86,6 @@ private:
 	UPROPERTY(VisibleAnyWhere, Category = UI)
 		class UWidgetComponent* HPBarWidget;
 	UPROPERTY(VisibleAnyWhere, Category = UI)
-		class UProgressBar* HPProgressBar;
+		class UWidgetComponent* DetectWidget;
+
 };
