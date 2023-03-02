@@ -108,6 +108,7 @@ public:
 	/** 좌, 우 입력시 Call */
 	void MoveRight(float Value);
 	void Jump();
+	void Roll();
 	/**최종 움직임 함수*/
 	void Move(float DeltaTime);
 	/**변화된 회전값이 입력시 Call*/
@@ -148,7 +149,15 @@ public:
 
 public:
 	void ToggleCrouch();
+	void EagleVision();
+	void Whistle();
 
+	//숲풀 overlap
+public:
+	UFUNCTION()
+		void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+		void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 protected:
 	UPROPERTY(VisibleAnywhere)
 		class UClimbingComponent* ClimbingComponent;
@@ -200,5 +209,10 @@ private:
 	class AArrow* Arrow;
 	uint8 ArrowType=0;
 	class AMainGameModeBase* MainGameMode;
+private:
+	UMaterialParameterCollection* EagleVisionMat;
+	UMaterialParameterCollectionInstance* EagleVisionPci;
+	bool CanEagleVision = false;
+	USoundBase* WhistleSound;
 
 };

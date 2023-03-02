@@ -5,23 +5,30 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/SceneComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
+#include "Materials/MaterialParameterCollection.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Perception/AISense_Hearing.h"
 #include "DrawDebugHelpers.h"
+#include "Arrow.h"
 #include "Bow.h"
-#include "Sword.h"
+#include "ClimbingComponent.h"
 #include "Daggle.h"
 #include "MainAnimInstance.h"
 #include "MainCharacterStatComponent.h"
 #include "MainGameModeBase.h"
 #include "KnightEnemy.h"
-#include "Arrow.h"
-#include "ClimbingComponent.h"
-#include "Components/SceneComponent.h"
+#include "Sword.h"
+#include "MainPlayerController.h"
+
+
 
 
 // Sets default values
@@ -75,7 +82,7 @@ AMainCharacter::AMainCharacter()
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 450.f;
 	CameraBoom->bUsePawnControlRotation = true;
-	CameraBoom->bEnableCameraLag = true;
+
 	// Camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
@@ -108,6 +115,21 @@ AMainCharacter::AMainCharacter()
 	//오름 움직임
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("Climbing"));
 	ClimbingComponent->SetupAttachment(RootComponent);
+
+	// 매의 눈
+	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> EagleVisionMaterial(TEXT("MaterialParameterCollection'/Game/AMyDirectory/Materials/MPC_Vision.MPC_Vision'"));
+	if (EagleVisionMaterial.Succeeded())
+	{
+		EagleVisionMat = EagleVisionMaterial.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<USoundWave> WhistleSoundWave(TEXT("SoundWave'/Game/AMyDirectory/Sounds/Whistle.Whistle'"));
+	if (WhistleSoundWave.Succeeded())
+	{
+		WhistleSound = WhistleSoundWave.Object;
+	}
+
+	
 }
 
 void AMainCharacter::Shot()
@@ -133,9 +155,9 @@ FHitResult AMainCharacter::LineTrace()
 
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // 히트 가능한 오브젝트 유형들.
-	TEnumAsByte<EObjectTypeQuery> Enemy = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody);
-	ObjectTypes.Add(Enemy);
-
+	//TEnumAsByte<EObjectTypeQuery> Enemy = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody);
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
 	TArray<AActor*> IgnoreActors; // 무시할 액터들.
 
 	FHitResult HitResult; // 히트 결과 값 받을 변수.
@@ -156,7 +178,7 @@ FHitResult AMainCharacter::LineTrace()
 		//, 5.0f
 	);
 
-	if (HitResult.Actor.IsValid())
+	if (HitResult.Actor.IsValid() && Cast<AActor>(HitResult.Actor)->ActorHasTag(FName("Enemy")))
 	{
 		if (MainGameMode)
 			MainGameMode->SetAimColor(true);
@@ -165,6 +187,9 @@ FHitResult AMainCharacter::LineTrace()
 	{
 		if (MainGameMode)
 			MainGameMode->SetAimColor(false);
+		if(HitResult.Actor.IsValid())
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.Actor->GetName());
+		HitResult.Actor = nullptr;
 	}
 
 	return HitResult;
@@ -303,7 +328,7 @@ void AMainCharacter::ZoomButtonPressed()
 	if (CurrentWeapon != EWeapon::Bow) return;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
-	GetCharacterMovement()->MaxWalkSpeed = 400.f;
+	GetCharacterMovement()->MaxWalkSpeed = 300.f;
 
 	isZooming = true;
 	MainAnim->isZooming = true;
@@ -328,7 +353,7 @@ void AMainCharacter::ZoomFunction(float DeltaTime)
 {
 	FVector TargetOffset;
 	if(GetCharacterMovement()->IsCrouching())
-		TargetOffset = FVector(0.f, 0.f, CrouchedEyeHeight+50.f);
+		TargetOffset = FVector(0.f, 0.f, CrouchedEyeHeight+41.5f);
 	else
 		TargetOffset = FVector(0.f, 0.f, BaseEyeHeight);
 	if (isZooming)
@@ -363,6 +388,12 @@ void AMainCharacter::BeginPlay()
 	}
 	CurrentFOV = DefaultFOV;
 	MainGameMode = Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+	//매의눈
+	EagleVisionPci = GetWorld()->GetParameterCollectionInstance(EagleVisionMat);
+	//숲풀
+	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMainCharacter::OnOverlapBegin);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AMainCharacter::OnOverlapEnd);
 }
 
 void AMainCharacter::SetWeapon(EWeapon Weapon)
@@ -418,48 +449,35 @@ void AMainCharacter::MoveRight(float Value)
 
 void AMainCharacter::Jump()
 {
-	if (ClimbingComponent->isInHeight)
+	if (!(ClimbingComponent->isClimbing))
 	{
-		if (!(ClimbingComponent->isClimbing))
-		{
-			Super::Jump();
-		}
-		else if (ClimbingComponent->CanJumpLeft && InputComponent->GetAxisValue((FName("MoveRight"))) < 0.f)
-		{
-			ClimbingComponent->JumpLeftLedge();
-		}
-		else if (ClimbingComponent->CanJumpRight && InputComponent->GetAxisValue((FName("MoveRight"))) > 0.f)
-		{
-			ClimbingComponent->JumpRightLedge();
-		}
-		else if(ClimbingComponent->CanJumpUp)
-		{
-			ClimbingComponent->JumpUpLedge();
-		}
-		
+		Super::Jump();
 	}
-	else //구르기
+	else if (ClimbingComponent->CanJumpLeft && InputComponent->GetAxisValue((FName("MoveRight"))) < 0.f)
 	{
-		FRotator TargetRot = GetControlRotation();
-		TargetRot.Pitch = 0;
-		TargetRot.Roll = 0;
-		DisableInput(Cast<APlayerController>(GetController()));
-		if (InputComponent->GetAxisValue((FName("MoveRight"))) > 0.f)
-		{
+		ClimbingComponent->JumpLeftLedge();
+	}
+	else if (ClimbingComponent->CanJumpRight && InputComponent->GetAxisValue((FName("MoveRight"))) > 0.f)
+	{
+		ClimbingComponent->JumpRightLedge();
+	}
+	else if (ClimbingComponent->CanJumpUp)
+	{
+		ClimbingComponent->JumpUpLedge();
+	}
 
-			SetActorRotation(TargetRot + FRotator(0.f, 90.f, 0.f));
-		}
-		else if (InputComponent->GetAxisValue((FName("MoveRight"))) < 0.f)
-		{
-			SetActorRotation(TargetRot + FRotator(0.f, -90.f, 0.f));
-		}
-		else if (InputComponent->GetAxisValue((FName("MoveForward"))) < 0.f)
-		{
-			SetActorRotation(TargetRot + FRotator(0.f, -180.f, 0.f));
-		}
-		MainAnim->PlayRollMontage();
-	}
-	
+}
+
+void AMainCharacter::Roll()
+{
+	DisableInput(Cast<APlayerController>(GetController()));
+	FVector RollRot;
+	RollRot += FollowCamera->GetForwardVector() * InputComponent->GetAxisValue(FName("MoveForward"));
+	RollRot += FollowCamera->GetRightVector() * InputComponent->GetAxisValue(FName("MoveRight"));
+	RollRot += GetActorLocation();
+	if (RollRot != FVector(0.f, 0.f, 0.f))
+		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), RollRot));
+	MainAnim->PlayRollMontage();
 }
 
 void AMainCharacter::Move(float DeltaTime)
@@ -666,7 +684,55 @@ void AMainCharacter::ToggleCrouch()
 	if (!GetCharacterMovement()->IsCrouching()) { Crouch(); }
 	else { UnCrouch(); }
 	
-	MainAnim->SetCrouch(GetCharacterMovement()->IsCrouching());
+	MainAnim->SetCrouch(!GetCharacterMovement()->IsCrouching());
+}
+
+void AMainCharacter::EagleVision()
+{
+	if (!CanEagleVision)
+	{
+		EagleVisionPci->SetScalarParameterValue(FName("VisionOn"), 1);
+		CanEagleVision = true;
+	}
+	else
+	{
+		EagleVisionPci->SetScalarParameterValue(FName("VisionOn"), 0);
+		CanEagleVision = false;
+	}
+		
+}
+
+void AMainCharacter::Whistle()
+{
+	UGameplayStatics::PlaySoundAtLocation(this, WhistleSound, GetActorLocation());
+	UAISense_Hearing::ReportNoiseEvent(this, GetActorLocation(), 1.0f, this, 1000.f, FName("Whistle"));
+}
+
+void AMainCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	
+	if (OtherActor != this)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Overlap: %s"), *OtherComp->GetCollisionProfileName().ToString());
+		if (OtherComp->GetCollisionProfileName().ToString().Contains(TEXT("Grass")))
+		{
+			
+			Cast<AMainPlayerController>(Controller)->TeamId = FGenericTeamId(2);
+		}
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Overlap: %s "), Cast<AMainPlayerController>(Controller)->TeamId);
+}
+
+void AMainCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (OtherActor != this)
+	{
+		if (OtherComp->GetCollisionProfileName().ToString().Contains(TEXT("Grass")))
+		{
+			Cast<AMainPlayerController>(Controller)->TeamId = FGenericTeamId(1);
+		}
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Overlap: %s"), Cast<AMainPlayerController>(Controller)->TeamId);
 }
 
 
@@ -852,6 +918,12 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		PlayerInputComponent->BindAction("ClimbCornerRight", IE_Pressed, this, &AMainCharacter::ClimbCornerRight);
 		//Crouch
 		PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMainCharacter::ToggleCrouch);
+		//EagleVision
+		PlayerInputComponent->BindAction("EagleVision", IE_Pressed, this, &AMainCharacter::EagleVision);
+		//Whistle
+		PlayerInputComponent->BindAction("Whistle", IE_Pressed, this, &AMainCharacter::Whistle);
+		//Roll
+		PlayerInputComponent->BindAction("Roll", IE_Pressed, this, &AMainCharacter::Roll);
 
 		PlayerInputComponent->BindAxis("MoveForward", this, &AMainCharacter::MoveForward);
 		PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacter::MoveRight);
@@ -925,7 +997,6 @@ void AMainCharacter::PostInitializeComponents()
 	MainAnim->OnBowSkill1.AddLambda([this]()->void {
 		Bow->SpawnWideArrow();
 		});
-	
 }
 
 void AMainCharacter::SwitchWeapon(AActor* NewWeapon, FName WeaponSocket)

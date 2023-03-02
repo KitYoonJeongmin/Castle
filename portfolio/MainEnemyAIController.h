@@ -25,27 +25,30 @@ public:
 	static const FName CanSeePlayerKey;
 	static const FName IsDeadKey;
 	static const FName DetectLevelKey;
+	static const FName CanHearWhistleKey;
+	static const FName WhistleLocKey;
 	void StopAI();
 	void StartAI();
 
-	void StartDetect();
-	void EndDetect();
+	void Sight(AActor* actor, FAIStimulus const Stimulus);
+	void Hearing(AActor* actor, FAIStimulus const Stimulus);
 	
 
 public:
 	UFUNCTION()
 		void OnTargetDetected(AActor* actor, FAIStimulus const Stimulus);
+	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 
 	//AI Perception º¯¼ö
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AISightRadius =1100.f;
+		float AISightRadius =2000.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float AILoseSightRadius = 0.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AIFieldOfView = 45.f;
+		float AIFieldOfView = 120.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AISightAge = 5.f;
+		float AISightAge = 2.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float AILastSeenLocation = 0.f;
 private:
@@ -61,10 +64,16 @@ protected:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-	UPROPERTY(VisibleDefaultsOnly, Category = AIPerception)
+	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = AIPerception)
 		class UAISenseConfig_Sight* SightConfig;
+	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = AIPerception)
+		class UAISenseConfig_Hearing* HearingConfig;
 
 private:
 	bool isDetect = false;
+	float Distance;
 	float DetectLevel = 0.f;
+	float TargetLevel = 0.f;
+	TArray<float> DetectDistnace;
+	IGenericTeamAgentInterface* targetTeam;
 };

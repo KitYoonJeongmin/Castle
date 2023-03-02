@@ -2,6 +2,7 @@
 
 
 #include "MainGameModeBase.h"
+#include "MainPlayerController.h"
 #include "Blueprint/UserWidget.h"
 #include "MainCharacter.h"
 #include "MainHUDWidget.h"
@@ -10,6 +11,7 @@
 AMainGameModeBase::AMainGameModeBase()
 {
 	DefaultPawnClass = AMainCharacter::StaticClass();
+	PlayerControllerClass = AMainPlayerController::StaticClass();
 
 	static ConstructorHelpers::FClassFinder<UUserWidget> AimWidgetAsset(TEXT("WidgetBlueprint'/Game/AMyDirectory/UI/UI_Aim.UI_Aim_C'"));
 	if (AimWidgetAsset.Succeeded())

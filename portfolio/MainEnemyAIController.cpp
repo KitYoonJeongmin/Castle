@@ -9,8 +9,10 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
+#include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AIPerceptionTypes.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "DrawDebugHelpers.h"
 #include "MainCharacter.h"
 #include "KnightEnemy.h"
 
@@ -20,7 +22,8 @@ const FName AMainEnemyAIController::TargetKey(TEXT("Target"));
 const FName AMainEnemyAIController::CanSeePlayerKey(TEXT("CanSeePlayer"));
 const FName AMainEnemyAIController::IsDeadKey(TEXT("IsDead"));
 const FName AMainEnemyAIController::DetectLevelKey(TEXT("DetectLevel"));
-
+const FName AMainEnemyAIController::CanHearWhistleKey(TEXT("CanHearWhistle"));
+const FName AMainEnemyAIController::WhistleLocKey(TEXT("WhistleLoc"));
 
 AMainEnemyAIController::AMainEnemyAIController()
 {
@@ -48,12 +51,29 @@ AMainEnemyAIController::AMainEnemyAIController()
 	SightConfig->AutoSuccessRangeFromLastSeenLocation = AILastSeenLocation;	//마지막으로 본 위치의 해당 범위내에 있으면 이미 본 대상을 항상 볼 수 있음
 
 	SightConfig->DetectionByAffiliation.bDetectEnemies = true; // 소속별 탐지 적
-	SightConfig->DetectionByAffiliation.bDetectFriendlies = true; // 소속별 탐지 팀
+	SightConfig->DetectionByAffiliation.bDetectFriendlies = false; // 소속별 탐지 팀
 	SightConfig->DetectionByAffiliation.bDetectNeutrals = true; // 소속별 탐지 중립
 	
 	GetPerceptionComponent()->SetDominantSense(SightConfig->GetSenseImplementation());
 	GetPerceptionComponent()->ConfigureSense(*SightConfig);
 	GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this, &AMainEnemyAIController::OnTargetDetected); //지정된 대상에 대해 인식 정보가 업데이트되었음을 ​​바인딩된 모든 개체에 알림
+
+	//AI Perception::Hearing 설정
+	HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("Hearing Config"));
+
+	HearingConfig->HearingRange = 3000.f;	//범위 설정
+	HearingConfig->LoSHearingRange = 3000.f;	//범위 디버거
+	HearingConfig->SetMaxAge(1.f);
+
+	HearingConfig->DetectionByAffiliation.bDetectEnemies = true; // 소속별 탐지 적
+	HearingConfig->DetectionByAffiliation.bDetectFriendlies = true; // 소속별 탐지 팀
+	HearingConfig->DetectionByAffiliation.bDetectNeutrals = true; // 소속별 탐지 중립
+
+	GetPerceptionComponent()->ConfigureSense(*HearingConfig);	//감각 추가
+
+	//Detect Distance
+	DetectDistnace.Add(600.f);
+	DetectDistnace.Add(1200.f);
 }
 
 void AMainEnemyAIController::OnPossess(APawn* InPawn)
@@ -106,78 +126,142 @@ void AMainEnemyAIController::StartAI()
 
 void AMainEnemyAIController::OnTargetDetected(AActor* actor, FAIStimulus const Stimulus)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("Sense Update: %f"), Stimulus.GetAge());
 	if (Blackboard->GetValueAsBool(IsDeadKey)) return;
-	if (auto const player = Cast<AMainCharacter>(actor))
+	
+	switch (Stimulus.Type) 
 	{
-		UE_LOG(LogTemp, Warning, TEXT("====Detect!!==="));
-		StartDetect();
-		Blackboard->SetValueAsObject(TargetKey, player);
+	case 0:	//Sight
+		Sight(actor, Stimulus);
+		break;
+	case 1:	//Hearing
+		
+		Hearing(actor, Stimulus);
+		break;
 	}
-	if(!Stimulus.WasSuccessfullySensed())
+}
+
+ETeamAttitude::Type AMainEnemyAIController::GetTeamAttitudeTowards(const AActor& Other) const
+{
+	if (APawn const* OtherPawn = Cast<APawn>(&Other))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("====Sense was Unsuccessfully==="));
-		EndDetect();
+		if (auto const TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
+		{
+			if (TeamAgent->GetGenericTeamId() == FGenericTeamId(1))
+			{
+				return ETeamAttitude::Hostile;
+			}
+			else if(TeamAgent->GetGenericTeamId() == FGenericTeamId(3))
+			{
+				return ETeamAttitude::Friendly;
+			}
+		}
 	}
+	return ETeamAttitude::Neutral;
+	return ETeamAttitude::Type();
 }
 
 void AMainEnemyAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	if (isDetect && DetectLevel < 100.f)
+	if (isDetect && Blackboard->GetValueAsObject(TargetKey) != nullptr && targetTeam != nullptr && targetTeam->GetGenericTeamId() == FGenericTeamId(1))
 	{
-		DetectLevel += DeltaSeconds*30.f;
-		if (DetectLevel >= 100.f) 
-		{ 
-			DetectLevel = 100.f; 
-			if (!KnightEnemy->IsSetWeapon())
-			{
-				KnightEnemy->UseSword();
-			}
+
+		DrawDebugLine(GetWorld(), KnightEnemy->GetActorLocation(), Cast<AActor>(Blackboard->GetValueAsObject(TargetKey))->GetActorLocation(), FColor::Blue, false, 0.27f);
+		if (Blackboard->GetValueAsObject(TargetKey))
+		{
+			Distance = FVector::Distance(KnightEnemy->GetActorLocation(), Cast<AActor>(Blackboard->GetValueAsObject(TargetKey))->GetActorLocation());
 		}
-		
-	}
-	else if ((!isDetect) && DetectLevel > 0.f)
-	{
-		DetectLevel -= DeltaSeconds * 30.f;
-		if (DetectLevel <= 0.f) 
-		{ 
-			DetectLevel = 0.f; 
-			KnightEnemy->EnableDetectBar(false);
-			if (KnightEnemy->IsSetWeapon())
-			{
-				KnightEnemy->UseSword();
-			}
+		else { Distance = 1000000000.f; }
 
-			//성공적으로 감지하면 블랙보드에 bool값을 넣어준다.
-			Blackboard->SetValueAsBool(CanSeePlayerKey, false);
-			Blackboard->SetValueAsObject(TargetKey, nullptr);
+		if (Distance < DetectDistnace[0])
+		{
+			DetectLevel = 100.f;
+			TargetLevel = 100.f;
+
+		}
+		else if (Distance < DetectDistnace[1])
+		{
+			TargetLevel = 100.f;
+		}
+		else
+		{
+			TargetLevel = 0.f;
 		}
 
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("%f"), DetectLevel);
-	KnightEnemy->UpdateDetectBar(DetectLevel);
-	Blackboard->SetValueAsFloat(DetectLevelKey, DetectLevel);
-}
-
-void AMainEnemyAIController::StartDetect()
-{
-	if (!isDetect)
+	DetectLevel = FMath::Lerp(DetectLevel, TargetLevel, 0.005f);
+	//DetectBar
+	if (DetectLevel <= 1.f)
+	{
+		Blackboard->SetValueAsBool(CanSeePlayerKey, false);
+		Blackboard->SetValueAsObject(TargetKey, nullptr);
+		KnightEnemy->EnableDetectBar(false);
+		if (KnightEnemy->IsSetWeapon())
+		{
+			KnightEnemy->UseSword();
+		}
+	}
+	else
 	{
 		KnightEnemy->EnableDetectBar(true);
-		isDetect = true;
 	}
-	//성공적으로 감지하면 블랙보드에 bool값을 넣어준다.
-	Blackboard->SetValueAsBool(CanSeePlayerKey, true);
+	//속도
+	if (DetectLevel >= 99.f)
+	{
+		if (!KnightEnemy->IsSetWeapon())
+		{
+			KnightEnemy->UseSword();
+		}
+		KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(KnightEnemy->GetCharacterMovement()->MaxWalkSpeed, 400.f, 0.02f);
+	}
+	else
+	{
+		KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(KnightEnemy->GetCharacterMovement()->MaxWalkSpeed, 200.f, 0.02f);
+		if (targetTeam != nullptr && targetTeam->GetGenericTeamId() != FGenericTeamId(1))
+		{
+			isDetect = false;
+			TargetLevel = 0.f;
+		}
+	}
+	KnightEnemy->UpdateDetectBar(DetectLevel);
+	Blackboard->SetValueAsFloat(DetectLevelKey, DetectLevel);
 
+	
 }
 
-void AMainEnemyAIController::EndDetect()
+void AMainEnemyAIController::Sight(AActor* actor, FAIStimulus const Stimulus)
 {
-	if (isDetect)
+	if (Cast<AMainCharacter>(actor))
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("====Detect:fasle==="));
+		Blackboard->SetValueAsBool(CanSeePlayerKey, true);
+		Blackboard->SetValueAsObject(TargetKey, actor);
+		targetTeam = Cast<IGenericTeamAgentInterface>(Cast<APawn>(actor)->GetController());
+		isDetect = true;
+	}
+
+	if(!Stimulus.WasSuccessfullySensed())
+	{
 		isDetect = false;
+		//Blackboard->SetValueAsBool(CanSeePlayerKey, false);
+		//Blackboard->SetValueAsObject(TargetKey, nullptr);
+		TargetLevel = 0.f;
+	}
+}
+
+void AMainEnemyAIController::Hearing(AActor* actor, FAIStimulus const Stimulus)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("Hearing"));
+	if (Stimulus.Tag == FName("Whistle"))
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Hearing"));
+		Blackboard->SetValueAsVector(WhistleLocKey, actor->GetActorLocation());
+		Blackboard->SetValueAsBool(CanHearWhistleKey, true);
+	}
+	if(!Stimulus.WasSuccessfullySensed())
+	{
+		//Blackboard->SetValueAsVector(WhistleLocKey, newVe);
+		Blackboard->SetValueAsBool(CanHearWhistleKey, false);
 	}
 }
 

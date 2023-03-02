@@ -213,10 +213,11 @@ void UMainAnimInstance::PlayRollMontage()
 {
 	check(!IsDead);
 	Montage_Play(RollMontage,1.3f);
-	FLatentActionInfo Info;
+	/*FLatentActionInfo Info;
 	Info.CallbackTarget = this;
-	UKismetSystemLibrary::MoveComponentTo(Character->GetCapsuleComponent(), Character->GetActorLocation() + Character->GetActorForwardVector() * 400.f, Character->GetActorRotation(), false, false, 1.2f, false, EMoveComponentAction::Type::Move, Info);
 	
+	UKismetSystemLibrary::MoveComponentTo(Character->GetCapsuleComponent(), Character->GetActorLocation() + Character->GetActorForwardVector() * 400.f, Character->GetActorRotation(), false, false, 1.2f, false, EMoveComponentAction::Type::Move, Info);*/
+
 }
 
 void UMainAnimInstance::PlaySwordBlockMontage(bool isPlay)

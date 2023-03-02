@@ -74,12 +74,17 @@ public:
 	void JumpUpLedge();
 	void JumpUp(bool jumpUp);
 	bool CanJumpUp = false;
+
+	bool IsFalling = false;
 private:
 	FVector CharLoc;
 	FVector CharFor;
 	FVector HeightLoc;
 	FVector WallNormal;
 	FVector WallLoc;
+	FVector JumpHightLoc;
+	FVector JumpWallLoc;
+	FVector JumpWallNormal;
 
 	ACharacter* Character;
 

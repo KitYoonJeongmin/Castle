@@ -28,7 +28,7 @@ AKnightEnemy::AKnightEnemy()
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("PhysicsActor"));
 
-
+	this->Tags.Add(FName("Enemy"));
 
 	//메시 설정
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -88.0f), FRotator(0.f, -90.f, 0.f));
@@ -40,6 +40,8 @@ AKnightEnemy::AKnightEnemy()
 	{
 		GetMesh()->SetAnimInstanceClass(ANIM.Class);
 	}
+	GetMesh()->bRenderCustomDepth = true;
+	GetMesh()->CustomDepthStencilValue = 1;
 	//AI 설정
 	AIControllerClass = AMainEnemyAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -239,7 +241,7 @@ void AKnightEnemy::AttackCheck()
 		}
 
 		FDamageEvent DamageEvent;
-		HitResult.Actor->TakeDamage(50.0f, DamageEvent, GetController(), this);
+		HitResult.Actor->TakeDamage(1.0f, DamageEvent, GetController(), this);
 	}
 }
 
