@@ -1,20 +1,20 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "BTTask_FindPatrolPos.h"
+#include "BTDecorator_SetPatrolTarget.h"
 #include "Components/SplineComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "MainEnemyAIController.h"
 #include "KnightEnemy.h"
-UBTTask_FindPatrolPos::UBTTask_FindPatrolPos()
+
+UBTDecorator_SetPatrolTarget::UBTDecorator_SetPatrolTarget()
 {
 	NodeName = TEXT("FindPatrolPos");
 }
 
-EBTNodeResult::Type UBTTask_FindPatrolPos::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+bool UBTDecorator_SetPatrolTarget::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
 {
-	EBTNodeResult::Type Result = Super::ExecuteTask(OwnerComp, NodeMemory);
-
+	bool bResult = Super::CalculateRawConditionValue(OwnerComp, NodeMemory);
 	auto Controller = Cast<AMainEnemyAIController>(OwnerComp.GetAIOwner());
 	auto ControllingPawn = Cast<AKnightEnemy>(Controller->GetPawn());
 
@@ -22,17 +22,8 @@ EBTNodeResult::Type UBTTask_FindPatrolPos::ExecuteTask(UBehaviorTreeComponent& O
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Enemy Initialize faild!"));
 		return EBTNodeResult::Failed;
 	}
-	
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Set PatrolPosKey"));
 	OwnerComp.GetBlackboardComponent()->SetValueAsVector(AMainEnemyAIController::PatrolPosKey, ControllingPawn->GetNextLocaiton());
-	if (ControllingPawn->PatrolCheckPoint)
-	{
-		OwnerComp.GetBlackboardComponent()->SetValueAsFloat("CheckPointWaitTime", 5.f);
-	}
-	else
-	{
-		OwnerComp.GetBlackboardComponent()->SetValueAsFloat("CheckPointWaitTime", 0.f);
-	}
 	
-	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-	return EBTNodeResult::Succeeded;
+	return bResult;
 }

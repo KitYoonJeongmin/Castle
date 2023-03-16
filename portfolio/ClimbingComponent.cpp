@@ -39,11 +39,20 @@ UClimbingComponent::UClimbingComponent()
 
 	LeftLedgeArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("LeftLedgeArrow"));
 	LeftLedgeArrow->SetRelativeLocation(FVector(60.0f, -150.0f, 40.0f));
+
 	RightLedgeArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("RightLedgeArrow"));
 	RightLedgeArrow->SetRelativeLocation(FVector(60.0f, 150.0f, 40.0f));
 
 	UpArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("UpArrow"));
 	UpArrow->SetRelativeLocation(FVector(65.0f, 0.0f, 150.0f));
+
+	LeftHandArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("LeftHandArrow"));
+	LeftHandArrow->SetRelativeRotation(FRotator(0.f, 0.0f, 90.0f));
+	LeftHandArrow->SetRelativeLocation(FVector(0.0f, -5.0f, 70.0f));
+	
+	RightHandArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("RightHandArrow"));
+	RightHandArrow->SetRelativeRotation(FRotator(0.f, 0.0f, 90.0f));
+	RightHandArrow->SetRelativeLocation(FVector(0.0f, 5.0f, 70.0f));
 }
 
 
@@ -78,6 +87,8 @@ void UClimbingComponent::BeginPlay()
 		LeftLedgeArrow->AttachTo(Character->GetCapsuleComponent());
 		RightLedgeArrow->AttachTo(Character->GetCapsuleComponent());
 		UpArrow->AttachTo(Character->GetCapsuleComponent());
+		LeftHandArrow->AttachTo(Character->GetCapsuleComponent());
+		RightHandArrow->AttachTo(Character->GetCapsuleComponent());
 	}
 }
 
@@ -86,6 +97,7 @@ void UClimbingComponent::BeginPlay()
 void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	
 	if (Character->GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Walking)
 	{
 		IsFalling = false;
@@ -94,13 +106,14 @@ void UClimbingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	CharFor = Character->GetActorForwardVector();
 	ForwardTrace();
 	HeightTrace();
-	
+	IKHandTrace();
 	if (isClimbing)
 	{
 		LeftTrace();
 		RightTrace();
 		MoveInLedge();
 		JumpUpTrace();
+		
 		if (CanMoveLeft)
 		{
 			CanJumpLeft = false;
@@ -143,12 +156,35 @@ void UClimbingComponent::ForwardTrace()
 	{
 		isInForward = UKismetSystemLibrary::LineTraceSingleForObjects(
 			GetWorld(),
-			CharLoc + FVector(0.f, 0.f, 88.f),
-			(CharFor * 130.f) + CharLoc + FVector(0.f, 0.f, 88.f),
+			CharLoc + FVector(0.f, 0.f, 70.f),
+			(CharFor * 100.f) + CharLoc + FVector(0.f, 0.f, 70.f),
 			ObjectTypes,
 			false,
 			ActorsToIgnore, // 무시할 것이 없다고해도 null을 넣을 수 없다.
-			EDrawDebugTrace::None,
+			EDrawDebugTrace::ForOneFrame,
+			HitResult,
+			true
+			// 여기 밑에 3개는 기본 값으로 제공됨. 바꾸려면 적으면 됨.
+			, FLinearColor::Red
+			, FLinearColor::Green
+			, 5.0f
+		);
+		if (isInForward)
+		{
+			WallNormal = HitResult.Normal;
+			WallLoc = HitResult.Location;
+		}
+	}
+	else if (IsFalling)
+	{
+		isInForward = UKismetSystemLibrary::LineTraceSingleForObjects(
+			GetWorld(),
+			CharLoc + FVector(0.f, 0.f, 50.f),
+			(CharFor * 100.f) + CharLoc + FVector(0.f, 0.f, 50.f),
+			ObjectTypes,
+			false,
+			ActorsToIgnore, // 무시할 것이 없다고해도 null을 넣을 수 없다.
+			EDrawDebugTrace::ForOneFrame,
 			HitResult,
 			true
 			// 여기 밑에 3개는 기본 값으로 제공됨. 바꾸려면 적으면 됨.
@@ -231,7 +267,7 @@ void UClimbingComponent::Hang()
 {
 	isClimbing = true;
 	//UE_LOG(LogTemp, Warning, TEXT("Pelvis: %f Location : %f"), Character->GetMesh()->GetSocketLocation(FName("PelvisSocket")).Z, HeightLoc.Z);
-	FVector TargetLoc((WallNormal * 50.f + WallLoc).X, (WallNormal * 50.f + WallLoc).Y, HeightLoc.Z - Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 36.f);
+	FVector TargetLoc((WallNormal * 50.f + WallLoc).X, (WallNormal * 50.f + WallLoc).Y, HeightLoc.Z - Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 40.f);
 	FRotator TargetRot = UKismetMathLibrary::MakeRotFromX(WallNormal * -1);
 	FLatentActionInfo Info;
 	Info.CallbackTarget = this;
@@ -260,6 +296,7 @@ void UClimbingComponent::ClimbUp()
 {
 
 	if (!isClimbing || isFinish) return;
+	if (CanJumpUp) return;
 	Character->GetMesh()->GetAnimInstance()->Montage_Play(ClimbMon,1.f);
 	isFinish = true;
 
@@ -330,9 +367,23 @@ void UClimbingComponent::JumpLeftTrace()
 	ActorsToIgnore.Add(Character);
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel6));
-	if (UKismetSystemLibrary::CapsuleTraceSingleForObjects(GetWorld(), LeftLedgeArrow->GetComponentLocation(), LeftLedgeArrow->GetComponentLocation(), 30.f, 60.f, ObjectTypes,
-		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
+
+	FVector StartLoc = LeftLedgeArrow->GetComponentLocation();
+	FVector EndLoc = StartLoc + Character->GetActorRightVector() * -200.f;
+	if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), StartLoc, EndLoc, 30.f, ObjectTypes,
+		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
 	{
+		SideJumpLoc = HitResult.ImpactPoint;
+		if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), SideJumpLoc - CharFor * 100.f, SideJumpLoc, 30.f, ObjectTypes,
+			false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
+		{
+			SideJumpWallLoc = HitResult.ImpactPoint;
+			CanJumpLeft = !CanMoveLeft;
+		}
+		else
+		{
+			CanJumpLeft = false;
+		}
 		CanJumpLeft = !CanMoveLeft;
 	}
 	else
@@ -348,12 +399,23 @@ void UClimbingComponent::JumpRightTrace()
 	ActorsToIgnore.Add(Character);
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel6));
-	if (UKismetSystemLibrary::CapsuleTraceSingleForObjects(GetWorld(), RightLedgeArrow->GetComponentLocation(), RightLedgeArrow->GetComponentLocation(), 30.f, 60.f, ObjectTypes,
-		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *(HitResult.Actor->GetName()));
-		CanJumpRight = !CanMoveRight;
 
+	FVector StartLoc = RightLedgeArrow->GetComponentLocation();
+	FVector EndLoc = StartLoc + Character->GetActorRightVector()*200.f;
+	if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), StartLoc, EndLoc, 30.f, ObjectTypes,
+	   false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
+	{
+		SideJumpLoc = HitResult.ImpactPoint;
+		if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), SideJumpLoc -CharFor*100.f, SideJumpLoc, 30.f, ObjectTypes,
+			false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
+		{
+			SideJumpWallLoc = HitResult.ImpactPoint;
+			CanJumpRight = !CanMoveRight;
+		}
+		else
+		{
+			CanJumpRight = false;
+		}
 	}
 	else
 	{
@@ -374,12 +436,10 @@ void UClimbingComponent::JumpLeftLedge()
 			IsJumping = true;
 			isClimbing = true;
 
-			/*FTimerHandle WaitHandle;
-			float WaitTime = 0.8f; 
-			GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
-				{
-					Hang();
-				}), WaitTime, false); */
+			FLatentActionInfo Info;
+			Info.CallbackTarget = this;
+			SideJumpWallLoc.Z -= 50.f;
+			UKismetSystemLibrary::MoveComponentTo(Character->GetCapsuleComponent(), SideJumpWallLoc + CharFor * -40.f, Character->GetActorRotation(), true, true, 0.4f, false, EMoveComponentAction::Type::Move, Info);
 		}
 	}
 
@@ -397,12 +457,11 @@ void UClimbingComponent::JumpRightLedge()
 			IsJumping = true;
 			isClimbing = true;
 
-			/*FTimerHandle WaitHandle;
-			float WaitTime = 0.8f;
-			GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
-				{
-					Hang();
-				}), WaitTime, false);*/
+			FLatentActionInfo Info;
+			Info.CallbackTarget = this;
+			SideJumpWallLoc.Z -= 50.f;
+			UKismetSystemLibrary::MoveComponentTo(Character->GetCapsuleComponent(), SideJumpWallLoc + CharFor*-40.f, Character->GetActorRotation(), true, true, 0.4f, false, EMoveComponentAction::Type::Move, Info);
+			
 		}
 	}
 }
@@ -439,6 +498,7 @@ void UClimbingComponent::TurnLeftTrace()
 	FVector EndVec = StartVec + LeftClimbArrow->GetForwardVector() * 70.f;
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel6));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
 	if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), StartVec, EndVec, 25.f, ObjectTypes,
 		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
 	{
@@ -461,11 +521,14 @@ void UClimbingComponent::TurnRightTrace()
 	FVector StartVec(RightClimbArrow->GetComponentLocation());
 	StartVec.Z += 60.f;
 	FVector EndVec = StartVec + RightClimbArrow->GetForwardVector() * 70.f;
+
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel6));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
 	if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), StartVec, EndVec, 25.f, ObjectTypes,
 		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
 	{
+
 		CanTurnRight = false;
 	}
 	else
@@ -523,7 +586,7 @@ void UClimbingComponent::JumpUpLedge()
 		float WaitTime = 0.1f; 
 		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
 			{
-				FVector TargetLoc((JumpWallNormal * 50.f + JumpWallLoc).X, (JumpWallNormal * 50.f + JumpWallLoc).Y, JumpHightLoc.Z - Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 22.f);
+				FVector TargetLoc((JumpWallNormal * 50.f + JumpWallLoc).X, (JumpWallNormal * 50.f + JumpWallLoc).Y, JumpHightLoc.Z - Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + 40.f);
 				FRotator TargetRot = UKismetMathLibrary::MakeRotFromX(JumpWallNormal * -1);
 				FLatentActionInfo Info;
 				Info.CallbackTarget = this;
@@ -544,6 +607,46 @@ void UClimbingComponent::JumpUp(bool jumpUp)
 	IsJumping = false;
 	
 	Character->EnableInput(Cast<APlayerController>(Character->GetController()));
+}
+
+void UClimbingComponent::IKHandTrace()
+{
+	FHitResult HitResult;
+	FHitResult HitResult2;
+	TArray<AActor*> ActorsToIgnore;
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel6));
+
+	FVector LeftStartVec(LeftHandArrow->GetComponentLocation());
+	FVector LeftEndVec = LeftStartVec + LeftHandArrow->GetForwardVector() * 90.f;
+	if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), LeftStartVec, LeftEndVec, 5.f, ObjectTypes,
+		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
+	{
+		FVector HitPoint(HitResult.ImpactPoint);
+		FHitResult HitResultLeft;
+		if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), HitPoint+FVector(0.f,0.f,20.f), HitPoint, 5.f, ObjectTypes,
+			false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResultLeft, true))
+		{
+			IKLeftHand = HitPoint;
+			IKLeftHand.Z = HitResultLeft.ImpactPoint.Z;
+		}
+	}
+
+	FVector RightStartVec(RightHandArrow->GetComponentLocation());
+	FVector RightEndVec = RightStartVec + RightHandArrow->GetForwardVector() * 90.f;
+	if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), RightStartVec, RightEndVec, 5.f, ObjectTypes,
+		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult2, true))
+	{
+		FVector HitPoint(HitResult2.ImpactPoint);
+		FHitResult HitResultRight;
+		if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), HitPoint + FVector(0.f, 0.f, 20.f), HitPoint, 5.f, ObjectTypes,
+			false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResultRight, true))
+		{
+			IKRightHand = HitPoint;
+
+			IKRightHand.Z = HitResultRight.ImpactPoint.Z;
+		}
+	}
 }
 
 

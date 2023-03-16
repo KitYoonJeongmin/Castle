@@ -28,7 +28,7 @@ public:
 	UMainAnimInstance();
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	
-	//°ø°Ý animation
+	//ï¿½ï¿½ï¿½ï¿½ animation
 public:
 	void PlayDrawSwordMontage();
 	void PlayAttackMontage();
@@ -63,6 +63,7 @@ public:
 public:
 	void SetDeadAnim() { IsDead = true; }
 	void SetUpperBodyRotation(float Yaw, float Pitch);
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Weapon, Meta = (AllowPrivateAccess = true))
 		EWeapon CurrentWeapon;
@@ -70,6 +71,9 @@ public:
 		bool isZooming;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
 		bool isAimming;
+	void SetRandomAttackMon();
+private:
+	int32 AttackMonIndex = 0;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character, Meta = (AllowPrivateAccess = true))
 		float CurrentPawnForwardSpeed;
@@ -110,7 +114,7 @@ protected:
 		float LIK;
 protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Sword, Meta = (AllowPrivateAccess = true))
-		UAnimMontage* AttackMontage;
+		TArray<UAnimMontage*> AttackMontage;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Sword, Meta = (AllowPrivateAccess = true))
 		UAnimMontage* DrawSwordMontage;
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Sword, Meta = (AllowPrivateAccess = true))
@@ -188,6 +192,10 @@ protected:
 		void AnimNotify_JumpRightEnd();
 	UFUNCTION()
 		void AnimNotify_JumpUpEnd();
+	UFUNCTION()
+		void AnimNotify_Mount();
+	UFUNCTION()
+		void AnimNotify_Dismount();
 
 	FName GetAttackMontageSectionName(int32 Section);
 
@@ -207,10 +215,27 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
 	bool IsMovingRight = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Climb, Meta = (AllowPrivateAccess = true))
-		bool IsClimbing = false;
+	bool IsClimbing = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Crouch, Meta = (AllowPrivateAccess = true))
-		bool IsCrouch = false;
+	bool IsCrouch = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = HandIK, Meta = (AllowPrivateAccess = true))
+	FVector IKLeftHandLoc;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = HandIK, Meta = (AllowPrivateAccess = true))
+	FVector IKRightHandLoc;
 	
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Horse, Meta = (AllowPrivateAccess = true))
+	bool IsMount = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Horse, Meta = (AllowPrivateAccess = true))
+	bool CanMount = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Horse, Meta = (AllowPrivateAccess = true))
+	float MountF = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Horse, Meta = (AllowPrivateAccess = true))
+	float MountR = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Horse, Meta = (AllowPrivateAccess = true))
+	float HorseSpeed = 0.f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Horse, Meta = (AllowPrivateAccess = true))
+	float HorseRot = 0.f;
 public:
 	void JumpLeft(bool isJumpLeft);
 	void JumpRight(bool isJumpRight);

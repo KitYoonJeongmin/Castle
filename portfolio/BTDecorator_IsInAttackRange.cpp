@@ -24,7 +24,7 @@ bool UBTDecorator_IsInAttackRange::CalculateRawConditionValue(UBehaviorTreeCompo
 	if (nullptr == Target)
 		return false;
 
-	bResult = (Target->GetDistanceTo(ControllingPawn) <= 500.0f);
+	bResult = (Target->GetDistanceTo(ControllingPawn) <= 400.0f);
 	if (bResult&& ControllingPawn->GetCharacterMovement()->MaxWalkSpeed>200.f)
 	{
 		ControllingPawn->GetCharacterMovement()->MaxWalkSpeed = 200.f;

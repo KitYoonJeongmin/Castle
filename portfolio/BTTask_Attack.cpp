@@ -19,7 +19,8 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	if (nullptr == KnightEnemy || !KnightEnemy->IsSetWeapon())
 		return EBTNodeResult::Failed;
 
-
+	if (!KnightEnemy->IsSetWeapon())
+		KnightEnemy->UseSword();
 	KnightEnemy->Attack();
 	IsAttacking = true;
 	KnightEnemy->OnAttackEnd.AddLambda([this]() -> void {
@@ -34,6 +35,6 @@ void UBTTask_Attack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 	if (!IsAttacking)
 	{
-		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded); //°ø°ÝÀÌ ³¡³µÀ½À» ¾Ë·ÁÁÜ
+		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded); //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë·ï¿½ï¿½ï¿½
 	}
 }

@@ -46,7 +46,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character, Meta = (AllowPrivateAccess = true))
 		float CurrentPawnSpeed;
 	UPROPERTY()
-		class AKnightEnemy* Character;
+		class ACharacter* Character;
 
 	//FootIK
 	UPROPERTY()

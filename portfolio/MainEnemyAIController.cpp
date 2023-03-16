@@ -16,7 +16,7 @@
 #include "MainCharacter.h"
 #include "KnightEnemy.h"
 
-const FName AMainEnemyAIController::HomePosKey(TEXT("HomePos"));
+const FName AMainEnemyAIController::StrafeLocKey(TEXT("StrafeLoc"));
 const FName AMainEnemyAIController::PatrolPosKey(TEXT("PatrolPos"));
 const FName AMainEnemyAIController::TargetKey(TEXT("Target"));
 const FName AMainEnemyAIController::CanSeePlayerKey(TEXT("CanSeePlayer"));
@@ -51,8 +51,8 @@ AMainEnemyAIController::AMainEnemyAIController()
 	SightConfig->AutoSuccessRangeFromLastSeenLocation = AILastSeenLocation;	//마지막으로 본 위치의 해당 범위내에 있으면 이미 본 대상을 항상 볼 수 있음
 
 	SightConfig->DetectionByAffiliation.bDetectEnemies = true; // 소속별 탐지 적
-	SightConfig->DetectionByAffiliation.bDetectFriendlies = false; // 소속별 탐지 팀
-	SightConfig->DetectionByAffiliation.bDetectNeutrals = true; // 소속별 탐지 중립
+	SightConfig->DetectionByAffiliation.bDetectFriendlies = true; // 소속별 탐지 팀
+	SightConfig->DetectionByAffiliation.bDetectNeutrals = false; // 소속별 탐지 중립
 	
 	GetPerceptionComponent()->SetDominantSense(SightConfig->GetSenseImplementation());
 	GetPerceptionComponent()->ConfigureSense(*SightConfig);
@@ -81,7 +81,8 @@ void AMainEnemyAIController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	if (UseBlackboard(BBAsset, Blackboard))
 	{
-		Blackboard->SetValueAsVector(HomePosKey, InPawn->GetActorLocation());
+		Blackboard->SetValueAsFloat("DetectLevel100", 100.f);
+		
 		if (!RunBehaviorTree(BTAsset))
 		{
 			UE_LOG(LogTemp,Error, TEXT("AIController couldn't run behavior tree!"));
@@ -90,6 +91,7 @@ void AMainEnemyAIController::OnPossess(APawn* InPawn)
 	if (Cast<AKnightEnemy>(InPawn))
 	{
 		KnightEnemy = Cast<AKnightEnemy>(InPawn);
+		Blackboard->SetValueAsVector("PatrolPos", KnightEnemy->GetActorLocation());
 	}
 	else
 	{
@@ -102,6 +104,9 @@ void AMainEnemyAIController::OnPossess(APawn* InPawn)
 
 void AMainEnemyAIController::StopAI()
 {
+	if (GetBrainComponent() == nullptr) return;
+
+
 	auto BehaviorTreeComponent = Cast<UBehaviorTreeComponent>(BrainComponent);
 	if (IsValid(BehaviorTreeComponent))
 	{
@@ -113,6 +118,7 @@ void AMainEnemyAIController::StopAI()
 
 void AMainEnemyAIController::StartAI()
 {
+
 	auto BehaviorTreeComponent = Cast<UBehaviorTreeComponent>(BrainComponent);
 	if (IsValid(BehaviorTreeComponent))
 	{
@@ -135,99 +141,23 @@ void AMainEnemyAIController::OnTargetDetected(AActor* actor, FAIStimulus const S
 		Sight(actor, Stimulus);
 		break;
 	case 1:	//Hearing
-		
 		Hearing(actor, Stimulus);
 		break;
 	}
 }
 
-ETeamAttitude::Type AMainEnemyAIController::GetTeamAttitudeTowards(const AActor& Other) const
-{
-	if (APawn const* OtherPawn = Cast<APawn>(&Other))
-	{
-		if (auto const TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
-		{
-			if (TeamAgent->GetGenericTeamId() == FGenericTeamId(1))
-			{
-				return ETeamAttitude::Hostile;
-			}
-			else if(TeamAgent->GetGenericTeamId() == FGenericTeamId(3))
-			{
-				return ETeamAttitude::Friendly;
-			}
-		}
-	}
-	return ETeamAttitude::Neutral;
-	return ETeamAttitude::Type();
-}
-
 void AMainEnemyAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (isDetect && Blackboard->GetValueAsObject(TargetKey) != nullptr && targetTeam != nullptr && targetTeam->GetGenericTeamId() == FGenericTeamId(1))
-	{
-
-		DrawDebugLine(GetWorld(), KnightEnemy->GetActorLocation(), Cast<AActor>(Blackboard->GetValueAsObject(TargetKey))->GetActorLocation(), FColor::Blue, false, 0.27f);
-		if (Blackboard->GetValueAsObject(TargetKey))
-		{
-			Distance = FVector::Distance(KnightEnemy->GetActorLocation(), Cast<AActor>(Blackboard->GetValueAsObject(TargetKey))->GetActorLocation());
-		}
-		else { Distance = 1000000000.f; }
-
-		if (Distance < DetectDistnace[0])
-		{
-			DetectLevel = 100.f;
-			TargetLevel = 100.f;
-
-		}
-		else if (Distance < DetectDistnace[1])
-		{
-			TargetLevel = 100.f;
-		}
-		else
-		{
-			TargetLevel = 0.f;
-		}
-
-	}
-	DetectLevel = FMath::Lerp(DetectLevel, TargetLevel, 0.005f);
-	//DetectBar
-	if (DetectLevel <= 1.f)
+	if (targetTeam != nullptr && targetTeam->GetGenericTeamId() == FGenericTeamId(2))
 	{
 		Blackboard->SetValueAsBool(CanSeePlayerKey, false);
-		Blackboard->SetValueAsObject(TargetKey, nullptr);
-		KnightEnemy->EnableDetectBar(false);
-		if (KnightEnemy->IsSetWeapon())
-		{
-			KnightEnemy->UseSword();
-		}
+		//Blackboard->SetValueAsObject(TargetKey, nullptr);
 	}
-	else
+	else if(targetTeam != nullptr&&Blackboard->GetValueAsObject(TargetKey) != nullptr)
 	{
-		KnightEnemy->EnableDetectBar(true);
+		Blackboard->SetValueAsBool(CanSeePlayerKey, true);
 	}
-	//속도
-	if (DetectLevel >= 99.f)
-	{
-		if (!KnightEnemy->IsSetWeapon())
-		{
-			KnightEnemy->UseSword();
-		}
-		KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(KnightEnemy->GetCharacterMovement()->MaxWalkSpeed, 400.f, 0.02f);
-	}
-	else
-	{
-		KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = FMath::Lerp(KnightEnemy->GetCharacterMovement()->MaxWalkSpeed, 200.f, 0.02f);
-		if (targetTeam != nullptr && targetTeam->GetGenericTeamId() != FGenericTeamId(1))
-		{
-			isDetect = false;
-			TargetLevel = 0.f;
-		}
-	}
-	KnightEnemy->UpdateDetectBar(DetectLevel);
-	Blackboard->SetValueAsFloat(DetectLevelKey, DetectLevel);
-
-	
 }
 
 void AMainEnemyAIController::Sight(AActor* actor, FAIStimulus const Stimulus)
@@ -237,15 +167,12 @@ void AMainEnemyAIController::Sight(AActor* actor, FAIStimulus const Stimulus)
 		Blackboard->SetValueAsBool(CanSeePlayerKey, true);
 		Blackboard->SetValueAsObject(TargetKey, actor);
 		targetTeam = Cast<IGenericTeamAgentInterface>(Cast<APawn>(actor)->GetController());
-		isDetect = true;
 	}
 
 	if(!Stimulus.WasSuccessfullySensed())
 	{
-		isDetect = false;
-		//Blackboard->SetValueAsBool(CanSeePlayerKey, false);
+		Blackboard->SetValueAsBool(CanSeePlayerKey, false);
 		//Blackboard->SetValueAsObject(TargetKey, nullptr);
-		TargetLevel = 0.f;
 	}
 }
 
@@ -260,10 +187,63 @@ void AMainEnemyAIController::Hearing(AActor* actor, FAIStimulus const Stimulus)
 	}
 	if(!Stimulus.WasSuccessfullySensed())
 	{
-		//Blackboard->SetValueAsVector(WhistleLocKey, newVe);
 		Blackboard->SetValueAsBool(CanHearWhistleKey, false);
 	}
 }
 
+void AMainEnemyAIController::UpdateDetectLevel(bool CanIncrease)
+{
+	if (CanIncrease && DetectLevel < 100.f)
+	{
+		KnightEnemy->EnableDetectBar(true);
+		DetectLevel += 0.4f;
+		if (DetectLevel >= 100.f)
+		{
+			DetectLevel = 100.f;
+			KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = 400.f;
+			if(!KnightEnemy->IsSetWeapon())
+				KnightEnemy->UseSword();
+		}
+	}
+	else if(DetectLevel > 0.f)
+	{
+		DetectLevel -= 0.5f;
+		if (DetectLevel <= 0.f)
+		{
+			KnightEnemy->EnableDetectBar(false);
+			KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = 200.f;
+			if (KnightEnemy->IsSetWeapon())
+				KnightEnemy->UseSword();
+			DetectLevel = 0.f;
+		}
+	}
+	KnightEnemy->UpdateDetectBar(DetectLevel);
+	Blackboard->SetValueAsFloat(DetectLevelKey, DetectLevel);
+}
 
+void AMainEnemyAIController::SetStun(bool IsStun)
+{
+	if (Blackboard == nullptr) return;
+	if (Blackboard->GetValueAsBool("IsDead")) return;
+	Blackboard->SetValueAsBool("Stun", IsStun);
+}
+
+ETeamAttitude::Type AMainEnemyAIController::GetTeamAttitudeTowards(const AActor& Other) const
+{
+	if (APawn const* OtherPawn = Cast<APawn>(&Other))
+	{
+		if (auto const TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
+		{
+			if (TeamAgent->GetGenericTeamId() == FGenericTeamId(1))
+			{
+				return ETeamAttitude::Hostile;
+			}
+			else if (TeamAgent->GetGenericTeamId() == FGenericTeamId(3))
+			{
+				return ETeamAttitude::Friendly;
+			}
+		}
+	}
+	return ETeamAttitude::Neutral;
+}
 

@@ -16,7 +16,7 @@ UBTTask_GetStrafeLocation::UBTTask_GetStrafeLocation()
 EBTNodeResult::Type UBTTask_GetStrafeLocation::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	auto KnightEnemy = Cast<AKnightEnemy>(OwnerComp.GetAIOwner()->GetPawn());
-	KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = 10.f;
+	KnightEnemy->GetCharacterMovement()->MaxWalkSpeed = 200.f;
 	int32 Random = FMath::RandRange(0, 2);
 	FVector StrafeLoc = KnightEnemy->GetActorLocation();
 	switch (Random)
@@ -29,7 +29,7 @@ EBTNodeResult::Type UBTTask_GetStrafeLocation::ExecuteTask(UBehaviorTreeComponen
 		break;
 	}
 
-	OwnerComp.GetBlackboardComponent()->SetValueAsVector(AMainEnemyAIController::PatrolPosKey, StrafeLoc);
+	OwnerComp.GetBlackboardComponent()->SetValueAsVector(AMainEnemyAIController::StrafeLocKey, StrafeLoc);
 	DrawDebugLine(GetWorld(), KnightEnemy->GetActorLocation(), StrafeLoc, FColor::Cyan, false, 0.27f);
 	return EBTNodeResult::Type();
 }

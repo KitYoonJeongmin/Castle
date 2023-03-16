@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -24,11 +24,11 @@ class PORTFOLIO_API AMainCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AMainCharacter();
-	/**±âº»ÀûÀÎ È¸Àü°ªÀ» ÀúÀåÇÒ º¯¼ö*/
+	/**ï¿½âº»ï¿½ï¿½ï¿½ï¿½ È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseTurnRate;
 
-	/**±âº»ÀûÀÎ À§¾Æ·¡°ªÀ» ÀúÀåÇÒ º¯¼ö*/
+	/**ï¿½âº»ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	float BaseLookUpRate;
 
@@ -42,11 +42,11 @@ public:
 
 
 public:	
-	/**Ä«¸Þ¶ó°¡ Ä³¸¯ÅÍ µÚ¿¡ À§Ä¡*/
+	/**Ä«ï¿½Þ¶ï¿½ Ä³ï¿½ï¿½ï¿½ï¿½ ï¿½Ú¿ï¿½ ï¿½ï¿½Ä¡*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess))
 		class USpringArmComponent* CameraBoom;
 
-	/** µû¶ó´Ù´Ï´Â Ä«¸Þ¶ó*/
+	/** ï¿½ï¿½ï¿½ï¿½Ù´Ï´ï¿½ Ä«ï¿½Þ¶ï¿½*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
 	// Called every frame
@@ -62,7 +62,7 @@ public:
 	
 public:
 
-	/**°ø°Ý½Ã ½ÇÇà*/
+	/**ï¿½ï¿½ï¿½Ý½ï¿½ ï¿½ï¿½ï¿½ï¿½*/
 	FOnAttackEndDelegate OnAttackEnd;
 	void Attack();
 	void AttackRelease();
@@ -71,7 +71,7 @@ public:
 
 	void AttackCheck();
 
-	/**¹«±â¸¦ ¼Õ¿¡ ÀåÂø*/
+	/**ï¿½ï¿½ï¿½â¸¦ ï¿½Õ¿ï¿½ ï¿½ï¿½ï¿½ï¿½*/
 	void SwitchWeapon(class AActor* NewWeapon, FName WeaponSocket);
 	void UseSword();
 	void UseBow();
@@ -103,20 +103,20 @@ public:
 	EWeapon CurrentWeapon = EWeapon::Hand;
 	void SetWeapon(EWeapon Weapon);
 
-	/** ¾Õ, µÚ ÀÔ·Â½Ã Call */
+	/** ï¿½ï¿½, ï¿½ï¿½ ï¿½Ô·Â½ï¿½ Call */
 	void MoveForward(float Value);
-	/** ÁÂ, ¿ì ÀÔ·Â½Ã Call */
+	/** ï¿½ï¿½, ï¿½ï¿½ ï¿½Ô·Â½ï¿½ Call */
 	void MoveRight(float Value);
 	void Jump();
 	void Roll();
-	/**ÃÖÁ¾ ¿òÁ÷ÀÓ ÇÔ¼ö*/
+	/**ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½*/
 	void Move(float DeltaTime);
-	/**º¯È­µÈ È¸Àü°ªÀÌ ÀÔ·Â½Ã Call*/
+	/**ï¿½ï¿½È­ï¿½ï¿½ È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·Â½ï¿½ Call*/
 	void Turn(float Rate);
-	/**º¯È­µÈ À§¾Æ·¡°ªÀÌ ÀÔ·Â½Ã Call*/
+	/**ï¿½ï¿½È­ï¿½ï¿½ ï¿½ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·Â½ï¿½ Call*/
 	void LookUp(float Rate);
 
-	/**Shift ÀÔ·Â½Ã*/
+	/**Shift ï¿½Ô·Â½ï¿½*/
 	void SetRunSpeed() { TargetVelocity = 150.0f; }
 	void SetWalkSpeed(){ TargetVelocity = 70.0f; }
 
@@ -132,19 +132,19 @@ public:
 public:
 	
 	UFUNCTION()
-		/**È­»ì º¯°æ*/
+		/**È­ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½*/
 		void ArrowChangePlus();
 	UFUNCTION()
 		void SetManaPoint(float PlusPoint);
 public:
 	class UClimbingComponent* GetClimbingComponent();
-	/**º®¿À¸£±â*/
+	/**ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	void ClimbUp();
-	/**º® ³»¸®±â*/
+	/**ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	void ClimbDown();
-	/**ÄÚ³Ê¿ÞÂÊ*/
+	/**ï¿½Ú³Ê¿ï¿½ï¿½ï¿½*/
 	void ClimbCornerLeft();
-	/**ÄÚ³Ê¿À¸¥ÂÊ*/
+	/**ï¿½Ú³Ê¿ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	void ClimbCornerRight();
 
 public:
@@ -152,7 +152,11 @@ public:
 	void EagleVision();
 	void Whistle();
 
-	//½£Ç® overlap
+	void Interact();
+	bool CanMount;
+	AActor* Horse;
+	UPROPERTY()
+		class UMainAnimInstance* MainAnim;
 public:
 	UFUNCTION()
 		void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -163,8 +167,7 @@ protected:
 		class UClimbingComponent* ClimbingComponent;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 		bool IsAttacking;
-	UPROPERTY()
-		class UMainAnimInstance* MainAnim;
+	
 
 	bool IsBlock;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -180,7 +183,7 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 		int32 CurrentCombo;
 protected:
-	//Ä«¸Þ¶ó zoom
+	//Ä«ï¿½Þ¶ï¿½ zoom
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoom", meta = (AllowPrivateAccess = true))
 		float DefaultFOV;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoom", meta = (AllowPrivateAccess = true))
@@ -214,5 +217,7 @@ private:
 	UMaterialParameterCollectionInstance* EagleVisionPci;
 	bool CanEagleVision = false;
 	USoundBase* WhistleSound;
+public:
+	UParticleSystem* HitParticle;
 
 };

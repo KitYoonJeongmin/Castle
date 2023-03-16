@@ -29,7 +29,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 public:
-	// Ãæµ¹ÀÌ ½ÃÀÛÇÒ½Ã¿¡ È£ÃâµÇ´Â µ¨¸®°ÔÀÌÆ®¿¡ µî·ÏÇÏ´Â ÇÔ¼ö
+	// ï¿½æµ¹ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ò½Ã¿ï¿½ È£ï¿½ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Ô¼ï¿½
 	UFUNCTION()
 		void ArrowBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -38,7 +38,7 @@ public:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	void Fire(AActor* Target ,FVector ForwardVec);
+	void Fire(AActor* Target ,FVector ForwardVec, FVector HitPoint);
 	void FireStrate(FVector TargetLoc);
 	void SetArrowState(uint8 num);
 	void SetLightMat(bool isLight);
@@ -51,9 +51,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Weapon)
 		UStaticMesh* DefaultArrowMesh;
 	UPROPERTY(VisibleAnywhere, Category = State)
-		EArrowState CurrentState = EArrowState::Default;
+		EArrowState CurrentState;
 
-	//ÆÄÆ¼Å¬
+	//ï¿½ï¿½Æ¼Å¬
 	UPROPERTY(VisibleAnywhere, Category = Particle)
 		class UParticleSystemComponent* ArrowParticle;
 	UPROPERTY(VisibleAnywhere, Category = Particle)
@@ -68,7 +68,7 @@ private:
 		float RemainTime;
 	UPROPERTY(VisibleAnywhere, Category = Poision)
 		AActor* PoisionActor;
-	//¸ÓÆ¼¸®¾ó
+	//ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½
 	UPROPERTY(VisibleAnywhere, Category = Material)
 		UMaterial* LightingArrowMat;
 	UPROPERTY(VisibleAnywhere, Category = Material)

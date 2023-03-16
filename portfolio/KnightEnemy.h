@@ -30,7 +30,7 @@ public:
 	virtual void PostInitializeComponents() override;
 
 public:
-	/**°ø°Ý½Ã ½ÇÇà*/
+	/**ï¿½ï¿½ï¿½Ý½ï¿½ ï¿½ï¿½ï¿½ï¿½*/
 	FOnAttackEndDelegate OnAttackEnd;
 	void Attack();
 	void AttackStartComboState();
@@ -38,7 +38,7 @@ public:
 
 	void AttackCheck();
 
-	/**¹«±â¸¦ ¼Õ¿¡ ÀåÂø*/
+	/**ï¿½ï¿½ï¿½â¸¦ ï¿½Õ¿ï¿½ ï¿½ï¿½ï¿½ï¿½*/
 	void SetWeapon(class AActor* NewWeapon, FName WeaponSocket);
 	void UseSword();
 
@@ -48,16 +48,23 @@ public:
 
 	void Block();
 	bool IsSetWeapon() { return IsWeapon; }
-	//¾Ï»ì
+	//ï¿½Ï»ï¿½
 	void PlayAssassination();
 	//hp bar visible
-	void DisableHPBar();
+	void EnableHPBar(bool isEnable);
 
 	void EnableDetectBar(bool isEnable);
 	void UpdateDetectBar(float DetectLevel);
+
+	//Patrolling
+	UPROPERTY(VisibleAnyWhere, Category = Patrol)
+	class ASpline* PatrolPath;
+	bool PatrolCheckPoint = false;
+	FVector GetNextLocaiton();
+
 public:
 	UFUNCTION()
-		/**ai°¡ ´ÙÀ½ µ¿ÀÛÀ» ÇÒ ¼ö ÀÖµµ·Ï °ø°Ý montage°¡ ³¡³µÀ½À» ¾Ë·ÁÁÜ OnMontageEnded.AddDynamicÀÇ ÀÎÀÚ·Î »ç¿ë*/
+		/**aiï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½Öµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ montageï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë·ï¿½ï¿½ï¿½ OnMontageEnded.AddDynamicï¿½ï¿½ ï¿½ï¿½ï¿½Ú·ï¿½ ï¿½ï¿½ï¿½*/
 		void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -68,16 +75,11 @@ protected:
 		class UKnightEnemyAnimInstance* EnemyAnim;
 	bool IsWeapon;
 	bool IsBlock;
-
-	
-
 protected:
 	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 		bool CanNextCombo;
-
 	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 		bool IsComboInputOn;
-
 	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 		int32 CurrentCombo;
 private:
@@ -88,4 +90,10 @@ private:
 	UPROPERTY(VisibleAnyWhere, Category = UI)
 		class UWidgetComponent* DetectWidget;
 
+	//Patroling
+private:
+	float PatrolingDistance = 1.f;
+	float DistanceChange = 200.f;
+	int32 PointIndex = 0;
+	int32 AddIndex= 1;
 };

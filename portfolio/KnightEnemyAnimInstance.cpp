@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "KnightEnemyAnimInstance.h"
@@ -50,7 +50,7 @@ UKnightEnemyAnimInstance::UKnightEnemyAnimInstance()
 void UKnightEnemyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
-	Character = Cast<AKnightEnemy>(TryGetPawnOwner());
+	Character = Cast<ACharacter>(TryGetPawnOwner());
 
 	if (!::IsValid(Character)) { return; }
 

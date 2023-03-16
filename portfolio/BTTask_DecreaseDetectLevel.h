@@ -4,23 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
-#include "BTTask_FindPatrolPos.generated.h"
+#include "BTTask_DecreaseDetectLevel.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PORTFOLIO_API UBTTask_FindPatrolPos : public UBTTaskNode
+class PORTFOLIO_API UBTTask_DecreaseDetectLevel : public UBTTaskNode
 {
 	GENERATED_BODY()
 public:
-	UBTTask_FindPatrolPos();
-
-protected:
+	UBTTask_DecreaseDetectLevel();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
-
-private:
-	float DistanceChange;
-
-	
 };

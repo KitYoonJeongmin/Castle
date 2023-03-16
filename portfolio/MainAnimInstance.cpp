@@ -6,11 +6,13 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Controller.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/World.h"
 #include "MainCharacter.h"
 #include "ClimbingComponent.h"
+#include "RidingHorse.h"
 
 UMainAnimInstance::UMainAnimInstance()
 {
@@ -27,7 +29,12 @@ UMainAnimInstance::UMainAnimInstance()
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> ATTACK_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/Mon_Attack.Mon_Attack'"));
 	if (ATTACK_MONTAGE.Succeeded())
 	{
-		AttackMontage = ATTACK_MONTAGE.Object;
+		AttackMontage.Add(ATTACK_MONTAGE.Object);
+	}
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> Combo2_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/Mon_Attack2.Mon_Attack2'"));
+	if (Combo2_MONTAGE.Succeeded())
+	{
+		AttackMontage.Add(Combo2_MONTAGE.Object);
 	}
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> DrawSword_MONTAGE(TEXT("AnimMontage'/Game/AMyDirectory/Animations/DrawSwordMontage.DrawSwordMontage'"));
 	if (DrawSword_MONTAGE.Succeeded())
@@ -117,13 +124,14 @@ UMainAnimInstance::UMainAnimInstance()
 	{
 		ClimbJumpUp = ClimbJumpUp_MONTAGE.Object;
 	}
+
 	
 }
 
 
 void UMainAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
-	//CharacterÀÇ Á¤º¸¸¦ ¾ò¾î¿È
+	//Characterï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	Super::NativeUpdateAnimation(DeltaSeconds);
 	Character = Cast<AMainCharacter>(TryGetPawnOwner());
 
@@ -151,6 +159,17 @@ void UMainAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		IsMovingLeft = Character->GetClimbingComponent()->IsMovingLeft;
 		IsMovingRight = Character->GetClimbingComponent()->IsMovingRight;
 		IsClimbing = Character->GetClimbingComponent()->isClimbing;
+
+		//HandIK
+		IKLeftHandLoc = Character->GetClimbingComponent()->IKLeftHand;
+		IKRightHandLoc = Character->GetClimbingComponent()->IKRightHand;
+
+		//Horse
+		if (Character->Horse != nullptr)
+		{
+			HorseSpeed = Cast<ARidingHorse>(Character->Horse)->ForwardSpeed;
+			HorseRot = Cast<ARidingHorse>(Character->Horse)->RightSpeed / 7.f;
+		}
 	}
 
 }
@@ -203,7 +222,7 @@ void UMainAnimInstance::PlayRightCornerMontage()
 void UMainAnimInstance::PlayAttackMontage()
 {
 	check(!IsDead);
-	Montage_Play(AttackMontage, 1.2f);
+	Montage_Play(AttackMontage[AttackMonIndex], 1.2f);
 
 }
 
@@ -234,7 +253,7 @@ void UMainAnimInstance::PlaySwordSkill_1Montage()
 	Montage_Play(SwordSkill_1Montage, 1.f);
 
 	//FTimerHandle WaitHandle;
-	//float WaitTime = 0.8f; //½Ã°£À» ¼³Á¤ÇÏ°í
+	//float WaitTime = 0.8f; //ï¿½Ã°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½
 	//GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
 	//	{
 	//		GetWorld()->GetFirstPlayerController()->ClientPlayCameraShake(CameraShacke);
@@ -261,8 +280,8 @@ void UMainAnimInstance::PlayTurn90Montage(bool isRight)
 void UMainAnimInstance::JumpToAttackMontageSection(int32 NewSection)
 {
 	check(!IsDead);
-	check(Montage_IsPlaying(AttackMontage));
-	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), AttackMontage);
+	check(Montage_IsPlaying(AttackMontage[AttackMonIndex])); 
+	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), AttackMontage[AttackMonIndex]);
 	
 }
 
@@ -287,6 +306,11 @@ void UMainAnimInstance::SetUpperBodyRotation(float Yaw, float Pitch)
 {
 	UpperBodyRotationYaw = Yaw;
 	UpperBodyRotationPitch = Pitch;
+}
+
+void UMainAnimInstance::SetRandomAttackMon()
+{
+	AttackMonIndex = FMath::RandRange(0, 1);
 }
 
 
@@ -469,6 +493,25 @@ void UMainAnimInstance::AnimNotify_JumpUpEnd()
 {
 	Montage_Stop(0.1f);
 	Character->GetClimbingComponent()->JumpUp(false);
+}
+void UMainAnimInstance::AnimNotify_Mount()
+{
+	Character->GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Flying;
+	Character->GetCharacterMovement()->BrakingDecelerationFlying = 1000000.f;
+	Character->AttachToActor(Character->Horse, FAttachmentTransformRules::KeepWorldTransform, "SeatSocket");
+	GetWorld()->GetFirstPlayerController()->Possess(Cast<APawn>(Character->Horse));
+	Character->Horse->EnableInput(GetWorld()->GetFirstPlayerController());
+	Character->SetActorLocation(Character->GetMesh()->GetSocketLocation("Root")-FVector(0.f,0.f,20.f));
+	IsMount = true;
+}
+void UMainAnimInstance::AnimNotify_Dismount()
+{
+	Character->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	Character->SetActorLocation(Character->GetMesh()->GetSocketLocation("Root"));
+	Character->GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
+	Character->GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Walking;
+	Character->EnableInput(GetWorld()->GetFirstPlayerController());
+	CanMount = false;
 }
 FName UMainAnimInstance::GetAttackMontageSectionName(int32 Section)
 {

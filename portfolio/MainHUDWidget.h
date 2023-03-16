@@ -22,16 +22,16 @@ public:
 	void SetWeaponImage(uint8 WeaponNum);
 	
 
-private:
+public:
 
-	UPROPERTY()
-		class UProgressBar* HPBar;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UProgressBar* pbHP;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UProgressBar* ExpBar;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UImage* WeaponImg;
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<UTexture2D*> WeaponImagArr;
 };

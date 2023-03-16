@@ -1,4 +1,4 @@
- // Fill out your copyright notice in the Description page of Project Settings.
+ï»¿ // Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "KnightEnemy.h"
@@ -16,40 +16,39 @@
 #include "MainEnemyAIController.h"
 #include "KnightEnemyAnimInstance.h"
 #include "MainHUDWidget.h"
-
-
+#include "Spline.h"
 
 // Sets default values
 AKnightEnemy::AKnightEnemy()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;	//ÇöÀç tick ÇÔ¼ö¿¡¼­ ÁøÇàµÇ´Â °úÁ¤ÀÌ ¾øÀ¸´Ï false·Î º¯°æ
+	PrimaryActorTick.bCanEverTick = true;	//ï¿½ï¿½ï¿½ï¿½ tick ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ falseï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("PhysicsActor"));
 
 	this->Tags.Add(FName("Enemy"));
 
-	//¸Þ½Ã ¼³Á¤
+	//ï¿½Þ½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -88.0f), FRotator(0.f, -90.f, 0.f));
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_CHARMBASE(TEXT("SkeletalMesh'/Game/AMyDirectory/Enemy/Meshes/T-Pose.T-Pose'"));
 	if (SK_CHARMBASE.Succeeded()) { GetMesh()->SetSkeletalMesh(SK_CHARMBASE.Object); }
-	//¾Ö´Ï¸ÞÀÌ¼Ç ¼³Á¤
+	//ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½ ï¿½ï¿½ï¿½ï¿½
 	static ConstructorHelpers::FClassFinder<UAnimInstance> ANIM(TEXT("AnimBlueprint'/Game/AMyDirectory/Enemy/Animations/BP_KnightAnim.BP_KnightAnim_C'"));
-	if (ANIM.Succeeded())// ¾Ö´Ï¸ÞÀÌ¼Ç ¼³Á¤
+	if (ANIM.Succeeded())// ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½ ï¿½ï¿½ï¿½ï¿½
 	{
 		GetMesh()->SetAnimInstanceClass(ANIM.Class);
 	}
 	GetMesh()->bRenderCustomDepth = true;
 	GetMesh()->CustomDepthStencilValue = 1;
-	//AI ¼³Á¤
+	//AI ï¿½ï¿½ï¿½ï¿½
 	AIControllerClass = AMainEnemyAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 
 
 
-	//Ä³¸¯ÅÍ ¿òÁ÷ÀÓ ±¸¼º
+	//Ä³ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.f, 0.0f);
 	GetCharacterMovement()->JumpZVelocity = 450.f;
@@ -58,7 +57,7 @@ AKnightEnemy::AKnightEnemy()
 
 	IsWeapon = false;
 
-	//°ø°Ý
+	//ï¿½ï¿½ï¿½ï¿½
 	IsAttacking = false;
 	IsBlock = false;
 	AttackEndComboState();
@@ -96,11 +95,36 @@ AKnightEnemy::AKnightEnemy()
 void AKnightEnemy::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	//Patrolling
+	TArray<AActor*> ChildActor;
+	GetAttachedActors(ChildActor);
+	for (auto child : ChildActor)
+	{
+		if (Cast<ASpline>(child))
+		{
+			PatrolPath = Cast<ASpline>(child);
+			break;
+		}
+	}
+	if (PatrolPath != nullptr)
+		PatrolPath->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	//Sword
 	Sword = GetWorld()->SpawnActor<ASword>(FVector::ZeroVector, FRotator::ZeroRotator);
 	SetWeapon(Sword, TEXT("sword_lSocket"));
-	
+
+	//Widgets
+	HPBarWidget->InitWidget();
+	DetectWidget->InitWidget();
 	Cast<UMainHUDWidget>(HPBarWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
+	Cast<UMainHUDWidget>(DetectWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
+	EnableHPBar(false);
 	EnableDetectBar(false);
+
+	//CharacterMovement
+	GetCharacterMovement()->bUseRVOAvoidance = true;
+	GetCharacterMovement()->AvoidanceConsiderationRadius = 150.f;
+	
 }
 
 // Called every frame
@@ -120,7 +144,7 @@ void AKnightEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 void AKnightEnemy::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	//UE_LOG(LogTemp, Warning, TEXT("%s"), *(GetMesh()->GetAnimInstance()->GetName()));
+	
 	EnemyAnim = Cast<UKnightEnemyAnimInstance>(GetMesh()->GetAnimInstance());
 	check(nullptr != EnemyAnim);
 
@@ -166,7 +190,7 @@ void AKnightEnemy::Attack()
 		return;
 	}
 
-	//°ø°Ý
+	//ï¿½ï¿½ï¿½ï¿½
 	if (IsAttacking)
 	{
 		if (CanNextCombo)
@@ -200,20 +224,20 @@ void AKnightEnemy::AttackEndComboState()
 
 void AKnightEnemy::AttackCheck()
 {
-	//ÄÝ¸®ÀüÀ» »ý¼ºÇØ hit actor±¸ºÐ
-	FHitResult HitResult;	//hit Á¤º¸¸¦ ´ãÀ½
+	//ï¿½Ý¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ hit actorï¿½ï¿½ï¿½ï¿½
+	FHitResult HitResult;	//hit ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	FCollisionQueryParams Params(NAME_None, false, this);
 	bool bResult = GetWorld()->SweepSingleByChannel(
 		HitResult,
 		GetActorLocation(),
 		GetActorLocation() + GetActorForwardVector() * 200.0f,
 		FQuat::Identity,
-		ECollisionChannel::ECC_GameTraceChannel2,
+		ECollisionChannel::ECC_GameTraceChannel4,
 		FCollisionShape::MakeSphere(50.0f),
 		Params);
 
 
-#if ENABLE_DRAW_DEBUG	// DrawDebug¸¦ »ç¿ëÇØ À§¿¡¼­ ¸¸µç ÄÝ¸®ÀüÀ» ±×·ÁÁÜ
+#if ENABLE_DRAW_DEBUG	// DrawDebugï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×·ï¿½ï¿½ï¿½
 
 	FVector TraceVec = GetActorForwardVector() * 200.f;
 	FVector Center = GetActorLocation() + TraceVec * 0.5f;
@@ -232,7 +256,7 @@ void AKnightEnemy::AttackCheck()
 		DebugLifeTime);
 
 
-#endif	//Damage Àü´Þ
+#endif	//Damage ï¿½ï¿½ï¿½ï¿½
 	if (bResult)
 	{
 		if (HitResult.Actor.IsValid())
@@ -280,10 +304,11 @@ void AKnightEnemy::PlayAssassination()
 	EnemyAnim->PlayAssassinationAnim();
 }
 
-void AKnightEnemy::DisableHPBar()
+void AKnightEnemy::EnableHPBar(bool isEnable)
 {
-	HPBarWidget->SetVisibility(false);
+	HPBarWidget->SetVisibility(isEnable);
 }
+
 
 void AKnightEnemy::EnableDetectBar(bool isEnable)
 {
@@ -293,6 +318,35 @@ void AKnightEnemy::EnableDetectBar(bool isEnable)
 void AKnightEnemy::UpdateDetectBar(float DetectLevel)
 {
 	Cast<UMainHUDWidget>(DetectWidget->GetUserWidgetObject())->UpdateHPWidget(DetectLevel);
+}
+
+FVector AKnightEnemy::GetNextLocaiton()
+{
+	if (PatrolPath == nullptr) 
+	{
+		PatrolCheckPoint = false;
+		return this->GetActorLocation();
+	}
+	
+	if (PointIndex == 0)
+	{
+		AddIndex = 1;
+		PatrolCheckPoint = true;
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("First Point"));
+	}
+	else if (PointIndex == Cast<USplineComponent>(PatrolPath->GetRootComponent())->GetNumberOfSplinePoints() - 1)
+	{
+		AddIndex = -1;
+		PatrolCheckPoint = true;
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Last Point"));
+	}
+	else
+	{
+		PatrolCheckPoint = false;
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Patrol"));
+	}
+	PointIndex += AddIndex;
+	return Cast<USplineComponent>(PatrolPath->GetRootComponent())->GetLocationAtSplinePoint(PointIndex, ESplineCoordinateSpace::World);
 }
 
 void AKnightEnemy::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -309,15 +363,22 @@ void AKnightEnemy::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted
 float AKnightEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	
+	if (HealthPoint <= 0.0f) return FinalDamage;
+
 	HealthPoint -= FinalDamage;
-	Cast<AMainEnemyAIController>(GetController())->StopAI();
+	if(!HPBarWidget->IsActive())
+		EnableHPBar(true);
+	Cast<UMainHUDWidget>(HPBarWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
+	Cast<AMainCharacter>(UGameplayStatics::GetPlayerPawn(this, 0))->SetManaPoint(5.f);
+	
 	if (HealthPoint <= 0.0f)
 	{
 		EnemyAnim->SetDeadAnim();
 		GetController()->UnPossess();
 		SetActorEnableCollision(false);
-		DisableHPBar();
+		EnableHPBar(false);
+		EnableDetectBar(false);
+		
 	}
 	else 
 	{ 
@@ -327,15 +388,23 @@ float AKnightEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		}
 		else
 		{
+			if (Cast<AMainCharacter>(UGameplayStatics::GetPlayerPawn(this, 0))->HitParticle)
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Cast<AMainCharacter>(UGameplayStatics::GetPlayerPawn(this, 0))->HitParticle, GetActorLocation());
 			FLatentActionInfo Info;
 			Info.CallbackTarget = this;
 			UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), GetActorLocation() + DamageCauser->GetActorForwardVector() * 50.f, GetActorRotation(), false, false, 0.3f, false, EMoveComponentAction::Type::Move, Info);
 			EnemyAnim->PlayPainMontage();
 		}
-		
+		Cast<AMainEnemyAIController>(GetController())->SetStun(true);
+		FTimerHandle WaitHandle;
+		float WaitTime = 2.f;
+		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
+			{
+				if(HealthPoint>0.f)
+					Cast<AMainEnemyAIController>(GetController())->SetStun(false);
+			}), WaitTime, false);
 	}
-	Cast<UMainHUDWidget>(HPBarWidget->GetUserWidgetObject())->UpdateHPWidget(HealthPoint);
-	Cast<AMainCharacter>(UGameplayStatics::GetPlayerPawn(this,0))->SetManaPoint(5.f);
+	
 	return FinalDamage;
 }
 

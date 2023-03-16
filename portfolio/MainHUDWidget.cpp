@@ -29,9 +29,7 @@ UMainHUDWidget::UMainHUDWidget(const FObjectInitializer& ObjectInitializer) : Su
 void UMainHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	HPBar = Cast<UProgressBar>(GetWidgetFromName(TEXT("pbHP")));
-	//check(nullptr != HPBar);
-
+	
 	ExpBar = Cast<UProgressBar>(GetWidgetFromName(TEXT("pbExp")));
 	//check(nullptr != ExpBar);
 
@@ -40,9 +38,13 @@ void UMainHUDWidget::NativeConstruct()
 
 void UMainHUDWidget::UpdateHPWidget(float HPpercent)
 {
-	if (nullptr != HPBar)
+	if (nullptr != pbHP)
 	{
-		HPBar->SetPercent(HPpercent/100.f);
+		pbHP->SetPercent(HPpercent/100.f);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HPBar is nullptr : %s"),*this->GetName());
 	}
 }
 

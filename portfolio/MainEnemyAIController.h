@@ -19,7 +19,7 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 	
 
-	static const FName HomePosKey;
+	static const FName StrafeLocKey;
 	static const FName PatrolPosKey;
 	static const FName TargetKey;
 	static const FName CanSeePlayerKey;
@@ -27,26 +27,29 @@ public:
 	static const FName DetectLevelKey;
 	static const FName CanHearWhistleKey;
 	static const FName WhistleLocKey;
+
 	void StopAI();
 	void StartAI();
 
 	void Sight(AActor* actor, FAIStimulus const Stimulus);
 	void Hearing(AActor* actor, FAIStimulus const Stimulus);
-	
+	void UpdateDetectLevel(bool CanIncrease);
+
+	void SetStun(bool IsStun);
 
 public:
 	UFUNCTION()
 		void OnTargetDetected(AActor* actor, FAIStimulus const Stimulus);
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 
-	//AI Perception º¯¼ö
+	//AI Perception ï¿½ï¿½ï¿½ï¿½
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AISightRadius =2000.f;
+		float AISightRadius =3000.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float AILoseSightRadius = 0.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AIFieldOfView = 120.f;
+		float AIFieldOfView = 75.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float AISightAge = 2.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -72,8 +75,9 @@ protected:
 private:
 	bool isDetect = false;
 	float Distance;
-	float DetectLevel = 0.f;
 	float TargetLevel = 0.f;
 	TArray<float> DetectDistnace;
 	IGenericTeamAgentInterface* targetTeam;
+public:
+	float DetectLevel = 0.f;
 };

@@ -8,6 +8,7 @@
 #include "Components/SceneComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/Controller.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -27,6 +28,7 @@
 #include "KnightEnemy.h"
 #include "Sword.h"
 #include "MainPlayerController.h"
+#include "NPCCharacter.h"
 
 
 
@@ -35,7 +37,7 @@
 AMainCharacter::AMainCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;	//ÇöÀç tick ÇÔ¼ö¿¡¼­ ÁøÇàµÇ´Â °úÁ¤ÀÌ ¾øÀ¸´Ï false·Î º¯°æ
+	PrimaryActorTick.bCanEverTick = true;	//ï¿½ï¿½ï¿½ï¿½ tick ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ falseï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("MainCharacter"));
@@ -48,27 +50,27 @@ AMainCharacter::AMainCharacter()
 	TargetVelocity = 70.f;
 
 
-	//Ä«¸Þ¶ó¿¡¸¸ È¸ÀüÀ» Àû¿ë
+	//Ä«ï¿½Þ¶ó¿¡¸ï¿½ È¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
-	//¸Þ½Ã ¼³Á¤
+	//ï¿½Þ½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.f, 0.f, -88.0f), FRotator(0.f, -90.f, 0.f));
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_CHARMBASE(TEXT("SkeletalMesh'/Game/ParagonSparrow/Characters/Heroes/Sparrow/Skins/ZechinHuntress/Meshes/Sparrow_ZechinHuntress.Sparrow_ZechinHuntress'"));
 	if (SK_CHARMBASE.Succeeded()) 
 	{ 
 		GetMesh()->SetSkeletalMesh(SK_CHARMBASE.Object); 
 	}
-	//¾Ö´Ï¸ÞÀÌ¼Ç ¼³Á¤
+	//ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½ ï¿½ï¿½ï¿½ï¿½
 	static ConstructorHelpers::FClassFinder<UAnimInstance> ANIM(TEXT("AnimBlueprint'/Game/AMyDirectory/Animations/BP_AnimGraph.BP_AnimGraph_C'"));
-	if (ANIM.Succeeded())// ¾Ö´Ï¸ÞÀÌ¼Ç ¼³Á¤
+	if (ANIM.Succeeded())// ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½ ï¿½ï¿½ï¿½ï¿½
 	{
 		GetMesh()->SetAnimInstanceClass(ANIM.Class);
 	}
 
 
-	//Ä³¸¯ÅÍ ¿òÁ÷ÀÓ ±¸¼º
+	//Ä³ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 260.f, 0.f);
@@ -96,12 +98,12 @@ AMainCharacter::AMainCharacter()
 	ZoomCL = 130.f;
 
 
-	//°ø°Ý
+	//ï¿½ï¿½ï¿½ï¿½
 	IsAttacking = false;
 	IsBlock = false;
 	AttackEndComboState();
 
-	//½ºÅÝ
+	//ï¿½ï¿½ï¿½ï¿½
 	Characterstat = CreateDefaultSubobject<UMainCharacterStatComponent>(TEXT("CHARACTERSTAT"));
 	HealthPoint = 100.f;
 	ManaPoint = 0.f;
@@ -112,11 +114,12 @@ AMainCharacter::AMainCharacter()
 		BlockSound = BLOCKSOUND.Object;
 	}
 	
-	//¿À¸§ ¿òÁ÷ÀÓ
+	//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	ClimbingComponent = CreateDefaultSubobject<UClimbingComponent>(TEXT("Climbing"));
 	ClimbingComponent->SetupAttachment(RootComponent);
+	GetCharacterMovement()->BrakingDecelerationFlying = 1000000.f;
 
-	// ¸ÅÀÇ ´«
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> EagleVisionMaterial(TEXT("MaterialParameterCollection'/Game/AMyDirectory/Materials/MPC_Vision.MPC_Vision'"));
 	if (EagleVisionMaterial.Succeeded())
 	{
@@ -129,6 +132,12 @@ AMainCharacter::AMainCharacter()
 		WhistleSound = WhistleSoundWave.Object;
 	}
 
+	//particle
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> HitImpactParticle(TEXT("ParticleSystem'/Game/AMyDirectory/FX/P_HitImpact.P_HitImpact'"));
+	if (HitImpactParticle.Succeeded())
+	{
+		HitParticle = HitImpactParticle.Object;
+	}
 	
 }
 
@@ -150,17 +159,17 @@ FHitResult AMainCharacter::LineTrace()
 	FVector CameraLoc = FollowCamera->GetComponentLocation();
 	FVector CameraForward = FollowCamera->GetForwardVector();
 	FVector CameraUpVector = FollowCamera->GetUpVector();
-	FVector StartLoc = CameraLoc + (CameraForward * 400.0f); // ·¹ÀÌÀú ½ÃÀÛ ÁöÁ¡.
-	FVector EndLoc = StartLoc + (CameraForward * 5000.0f);// ·¹ÀÌÀú ³¡³ª´Â ÁöÁ¡.
+	FVector StartLoc = CameraLoc + (CameraForward * 400.0f); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
+	FVector EndLoc = StartLoc + (CameraForward * 5000.0f);// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
 
 
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // È÷Æ® °¡´ÉÇÑ ¿ÀºêÁ§Æ® À¯Çüµé.
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes; // ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
 	//TEnumAsByte<EObjectTypeQuery> Enemy = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody);
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
-	TArray<AActor*> IgnoreActors; // ¹«½ÃÇÒ ¾×ÅÍµé.
+	TArray<AActor*> IgnoreActors; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Íµï¿½.
 
-	FHitResult HitResult; // È÷Æ® °á°ú °ª ¹ÞÀ» º¯¼ö.
+	FHitResult HitResult; // ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
 
 	bool Result = UKismetSystemLibrary::LineTraceSingleForObjects(
 		GetWorld(),
@@ -168,11 +177,11 @@ FHitResult AMainCharacter::LineTrace()
 		EndLoc,
 		ObjectTypes,
 		false,
-		IgnoreActors, // ¹«½ÃÇÒ °ÍÀÌ ¾ø´Ù°íÇØµµ nullÀ» ³ÖÀ» ¼ö ¾ø´Ù.
+		IgnoreActors, // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ù°ï¿½ï¿½Øµï¿½ nullï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
 		EDrawDebugTrace::None,
 		HitResult,
 		true
-		// ¿©±â ¹Ø¿¡ 3°³´Â ±âº» °ªÀ¸·Î Á¦°øµÊ. ¹Ù²Ù·Á¸é ÀûÀ¸¸é µÊ.
+		// ï¿½ï¿½ï¿½ï¿½ ï¿½Ø¿ï¿½ 3ï¿½ï¿½ï¿½ï¿½ ï¿½âº» ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½. ï¿½Ù²Ù·ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½.
 		//, FLinearColor::Red
 		//, FLinearColor::Green
 		//, 5.0f
@@ -188,7 +197,7 @@ FHitResult AMainCharacter::LineTrace()
 		if (MainGameMode)
 			MainGameMode->SetAimColor(false);
 		if(HitResult.Actor.IsValid())
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.Actor->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.Actor->GetName());
 		HitResult.Actor = nullptr;
 	}
 
@@ -199,7 +208,7 @@ void AMainCharacter::Skill1()
 {
 	if (ManaPoint < 20.f) return;
 	FTimerHandle WaitHandle;
-	float WaitTime = 0.8f; //½Ã°£À» ¼³Á¤ÇÏ°í
+	float WaitTime = 0.8f; //ï¿½Ã°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½
 	switch (CurrentWeapon)
 	{
 	case EWeapon::Sword:
@@ -228,7 +237,7 @@ void AMainCharacter::Skill1()
 	case EWeapon::Bow :
 		if (isZooming) break;
 		
-		//¾Ö´Ï¸ÞÀÌ¼Ç
+		//ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½
 		MainAnim->PlayBowSkill1Montage();
 		Bow->PlayDrawBowMon(true,1);
 		ManaPoint -= 20;
@@ -249,7 +258,7 @@ void AMainCharacter::Skill2()
 
 		ArmLengthTo = 700.f;
 		FTimerHandle WaitHandle;
-		float WaitTime = 0.6f; //½Ã°£À» ¼³Á¤
+		float WaitTime = 0.6f; //ï¿½Ã°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		
 		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
 			{
@@ -288,29 +297,29 @@ float AMainCharacter::FindBetweenAngle(FVector OwnerLocation, FVector OwnerForwa
 {
 	
 	//FVector OwnerLocation = GetActorLocation();
-	//Å¸°ÙÀ» ÇâÇÏ´Â º¤ÅÍ °è»ê
+	//Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 	FVector ToTargetVec = (TargetLocation - OwnerLocation);
-	//Z ÃàÀ» ¼Ò°ÅÇÔ (ÃßÈÄ µû·Î ±¸ÇÏ±â À§ÇØ)
+	//Z ï¿½ï¿½ï¿½ï¿½ ï¿½Ò°ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½)
 	ToTargetVec *= FVector(1.f, 1.f, 0.f);
-	//Á¤±ÔÈ­ 
+	//ï¿½ï¿½ï¿½ï¿½È­ 
 	ToTargetVec.Normalize();
 
-	//Ä³¸¯ÅÍ ±âÁØ Forward Vector 
+	//Ä³ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Forward Vector 
 	//FVector OwnerForwardVec = GetActorForwardVector();
 
-	//°¢µµ¸¦ Ã£±â À§ÇØ ³»Àû (°á°ú´Â cos ¼¼Å¸) 
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ cos ï¿½ï¿½Å¸) 
 	float InnerProduct = FVector::DotProduct(OwnerForwardVec, ToTargetVec);
 
-	//Arc Cosine (°á°ú´Â Unsigned Degree) 
+	//Arc Cosine (ï¿½ï¿½ï¿½ï¿½ï¿½ Unsigned Degree) 
 	float TargetDegree = UKismetMathLibrary::DegAcos(InnerProduct);
 
-	//ºÎÈ£¸¦ Ã£±â À§ÇØ ¿ÜÀû 
+	//ï¿½ï¿½È£ï¿½ï¿½ Ã£ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 
 	FVector OutterProduct = FVector::CrossProduct(OwnerForwardVec, ToTargetVec);
 
-	//Yaw ±âÁØ ºÎÈ£ °¨º°À» À§ÇØ Z ºÎÈ£¸¦ °¡Á®¿È 
+	//Yaw ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È£ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Z ï¿½ï¿½È£ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
 	float DegSign = UKismetMathLibrary::SignOfFloat(OutterProduct.Z);
 
-	//ÃÖÁ¾ °á°ú·Î °¢µµ¿¡ ºÎÈ£¸¦ °öÇØ ¿ÞÂÊÀÎÁö ¿À¸¥ÂÊÀÎÁö¸¦ Æ÷ÇÔÇØ -180 ~ 180 µµÀÇ °¢µµ¸¦ °¡Á®¿È 
+	//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È£ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ -180 ~ 180 ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
 	float Result = TargetDegree * DegSign; return Result;
 	return Result;
 }
@@ -381,16 +390,16 @@ void AMainCharacter::BeginPlay()
 	SwitchWeapon(Sword, TEXT("sword_lSocket"));
 	Bow = GetWorld()->SpawnActor<ABow>(FVector::ZeroVector, FRotator::ZeroRotator);
 	SwitchWeapon(Bow, TEXT("BowBackSocket"));
-	//Ä«¸Þ¶ó È­°¢ ±¸ÇÏ±â
+	//Ä«ï¿½Þ¶ï¿½ È­ï¿½ï¿½ ï¿½ï¿½ï¿½Ï±ï¿½
 	if (FollowCamera)
 	{
 		DefaultFOV = FollowCamera->FieldOfView;
 	}
 	CurrentFOV = DefaultFOV;
 	MainGameMode = Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
-	//¸ÅÀÇ´«
+	//ï¿½ï¿½ï¿½Ç´ï¿½
 	EagleVisionPci = GetWorld()->GetParameterCollectionInstance(EagleVisionMat);
-	//½£Ç®
+	//ï¿½ï¿½Ç®
 	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMainCharacter::OnOverlapBegin);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AMainCharacter::OnOverlapEnd);
@@ -483,7 +492,7 @@ void AMainCharacter::Roll()
 void AMainCharacter::Move(float DeltaTime)
 {
 	if (GetMovementComponent()->IsFalling() || GetMovementComponent()->IsFlying()) { MoveDirection.Set(0.0f, 0.0f, 0.0f); return; }
-	//¿òÁ÷ÀÏ¶© º¸°£
+	//ï¿½ï¿½ï¿½ï¿½ï¿½Ï¶ï¿½ ï¿½ï¿½ï¿½ï¿½
 	MoveDirection.Normalize();
 	if (TargetVelocity != CurrentVelocity)
 	{
@@ -516,7 +525,7 @@ void AMainCharacter::Attack()
 		
 		if (HitResult.Actor.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.Actor->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.Actor->GetName());
 			AKnightEnemy* Enemy = Cast<AKnightEnemy>(HitResult.Actor);
 			float Distance = FVector::Distance(Enemy->GetActorLocation(), GetActorLocation());
 			float degree = FVector::DotProduct(FollowCamera->GetForwardVector(), Enemy->GetActorForwardVector());
@@ -526,7 +535,7 @@ void AMainCharacter::Attack()
 				UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), Enemy->GetActorLocation()-Enemy->GetActorRotation().Vector()*200.f, Enemy->GetActorRotation(), false, false, 0.3f, false, EMoveComponentAction::Type::Move, Info);
 				MainAnim->PlayAssassinationMontage();
 				Enemy->GetCharacterMovement()->DisableMovement();
-				Enemy->DisableHPBar();
+				Enemy->EnableHPBar(false);
 				Enemy->PlayAssassination();
 				//FDamageEvent DamageEvent;
 				//Enemy->TakeDamage(100.0f, DamageEvent, GetController(), this);
@@ -538,7 +547,6 @@ void AMainCharacter::Attack()
 		{
 			if (CanNextCombo)
 			{
-
 				IsComboInputOn = true;
 			}
 		}
@@ -555,6 +563,7 @@ void AMainCharacter::Attack()
 				PlayerRot.Yaw = LookRot.Yaw;
 				UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), GetActorLocation() + GetActorRotation().Vector() * 30, PlayerRot, false, false, 0.3f, false, EMoveComponentAction::Type::Move, Info);
 			}
+			MainAnim->SetRandomAttackMon();
 			MainAnim->PlayAttackMontage();
 		}
 		break;
@@ -564,7 +573,7 @@ void AMainCharacter::Attack()
 		break;
 	}
 
-	//°ø°Ý
+	//ï¿½ï¿½ï¿½ï¿½
 	
 }
 
@@ -602,8 +611,6 @@ void AMainCharacter::ArrowChangePlus()
 
 void AMainCharacter::SetManaPoint(float PlusPoint)
 {
-
-
 	ManaPoint += PlusPoint;
 	if (ManaPoint > 100.f)
 	{
@@ -642,6 +649,7 @@ void AMainCharacter::ClimbCornerLeft()
 			{
 				EnableInput(UGameplayStatics::GetPlayerController(this, 0));
 			}), WaitTime, false);
+
 		FTimerHandle WaitHandle2;
 		float WaitTime2 = 0.8f;
 		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
@@ -708,6 +716,37 @@ void AMainCharacter::Whistle()
 	UAISense_Hearing::ReportNoiseEvent(this, GetActorLocation(), 1.0f, this, 1000.f, FName("Whistle"));
 }
 
+void AMainCharacter::Interact()
+{
+	if (CanMount)
+	{
+		DisableInput(Cast<APlayerController>(GetController()));
+		this->SetActorRotation(Horse->GetActorRotation());
+		FVector ToHorseVec = Horse->GetActorLocation() - GetActorLocation();
+		//0ï¿½ï¿½ï¿½ï¿½ Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½Õ¿ï¿½ ï¿½Ö´Â°ï¿½
+		
+		MainAnim->MountR = FVector::DotProduct(ToHorseVec, this->GetActorRightVector());
+		MainAnim->MountF = FVector::DotProduct(ToHorseVec, this->GetActorForwardVector());
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		
+		FLatentActionInfo Info;
+		Info.CallbackTarget = this;
+		UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), GetActorLocation() + MainAnim->MountF*GetActorForwardVector()  + MainAnim->MountR * GetActorRightVector()+GetActorUpVector()*20.f
+			, GetActorRotation(), false, false, 0.1f, false, EMoveComponentAction::Type::Move, Info);
+		
+		MainAnim->CanMount = true;
+		return;
+	}
+	TArray<AActor*> OverlapActor;
+	GetOverlappingActors(OverlapActor,ANPCCharacter::StaticClass());
+	if (OverlapActor.IsValidIndex(0))
+	{
+		Cast<ANPCCharacter>(OverlapActor[0])->NextDiagolue();
+	}
+	
+	
+}
+
 void AMainCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	
@@ -716,11 +755,16 @@ void AMainCharacter::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 		//UE_LOG(LogTemp, Warning, TEXT("Overlap: %s"), *OtherComp->GetCollisionProfileName().ToString());
 		if (OtherComp->GetCollisionProfileName().ToString().Contains(TEXT("Grass")))
 		{
-			
 			Cast<AMainPlayerController>(Controller)->TeamId = FGenericTeamId(2);
+			UE_LOG(LogTemp, Warning, TEXT("Overlap: %s "), Cast<AMainPlayerController>(Controller)->TeamId);
+		}
+		else if (OtherActor->GetName().Contains(TEXT("Horse")))
+		{
+			CanMount = true;
+			Horse = OtherActor;
 		}
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Overlap: %s "), Cast<AMainPlayerController>(Controller)->TeamId);
+	
 }
 
 void AMainCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -730,9 +774,15 @@ void AMainCharacter::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* O
 		if (OtherComp->GetCollisionProfileName().ToString().Contains(TEXT("Grass")))
 		{
 			Cast<AMainPlayerController>(Controller)->TeamId = FGenericTeamId(1);
+			UE_LOG(LogTemp, Warning, TEXT("Overlap: %s"), Cast<AMainPlayerController>(Controller)->TeamId);
+		}
+		else if (OtherActor->GetName().Contains(TEXT("Horse")))
+		{
+			CanMount = false;
+			Horse = nullptr;
 		}
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Overlap: %s"), Cast<AMainPlayerController>(Controller)->TeamId);
+	
 }
 
 
@@ -753,8 +803,8 @@ void AMainCharacter::AttackEndComboState()
 
 void AMainCharacter::AttackCheck()
 {
-	//ÄÝ¸®ÀüÀ» »ý¼ºÇØ hit actor±¸ºÐ
-	FHitResult HitResult;	//hit Á¤º¸¸¦ ´ãÀ½
+	//ï¿½Ý¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ hit actorï¿½ï¿½ï¿½ï¿½
+	FHitResult HitResult;	//hit ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	FCollisionQueryParams Params(NAME_None, false, this);
 	bool bResult = GetWorld()->SweepSingleByChannel(
 		HitResult,
@@ -766,7 +816,7 @@ void AMainCharacter::AttackCheck()
 		Params);
 
 
-#if ENABLE_DRAW_DEBUG	// DrawDebug¸¦ »ç¿ëÇØ À§¿¡¼­ ¸¸µç ÄÝ¸®ÀüÀ» ±×·ÁÁÜ
+#if ENABLE_DRAW_DEBUG	// DrawDebugï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×·ï¿½ï¿½ï¿½
 
 	FVector TraceVec = GetActorForwardVector() * 200.f;
 	FVector Center = GetActorLocation() + TraceVec * 0.5f;
@@ -785,7 +835,7 @@ void AMainCharacter::AttackCheck()
 		DebugLifeTime);
 
 
-#endif	//Damage Àü´Þ
+#endif	//Damage ï¿½ï¿½ï¿½ï¿½
 	if (bResult)
 	{
 		if (HitResult.Actor.IsValid())
@@ -811,6 +861,8 @@ float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	}
 	if (FinalDamage > 0.0f)
 	{
+		if (HitParticle)
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, GetActorLocation());
 		HealthPoint -= FinalDamage;
 		
 		if (HealthPoint <= 0)
@@ -848,7 +900,7 @@ void AMainCharacter::Tick(float DeltaTime)
 		if (abs(AddYaw) < 75.f)
 		{
 			float LookYaw = FMath::FInterpTo(GetController()->GetControlRotation().Yaw, GetController()->GetControlRotation().Yaw+AddYaw, DeltaTime, 1.f);
-			//¼³Á¤
+			//ï¿½ï¿½ï¿½ï¿½
 			GetController()->SetControlRotation(FRotator(GetControlRotation().Pitch, LookYaw, GetControlRotation().Roll));
 		}
 		
@@ -924,6 +976,8 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		PlayerInputComponent->BindAction("Whistle", IE_Pressed, this, &AMainCharacter::Whistle);
 		//Roll
 		PlayerInputComponent->BindAction("Roll", IE_Pressed, this, &AMainCharacter::Roll);
+		//Interact
+		PlayerInputComponent->BindAction("Interaction", IE_Pressed, this, &AMainCharacter::Interact);
 
 		PlayerInputComponent->BindAxis("MoveForward", this, &AMainCharacter::MoveForward);
 		PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacter::MoveRight);

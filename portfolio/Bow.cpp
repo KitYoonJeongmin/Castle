@@ -69,11 +69,9 @@ void ABow::PlayDrawBowMon(bool IsDraw, int8 fireIndex)
 		}
 		else
 		{
-
 			//Arrow->GetMesh()->SetWorldScale3D(FVector(1.f, 1.f, 1.f));
 		}
 	}
-		
 	else
 	{
 		Weapon->PlayAnimation(BowIdleMontage, false);
@@ -94,13 +92,12 @@ void ABow::SpawnArrow()
 void ABow::DefaultFire()
 {
 	if(Arrow == nullptr) return;
-	UE_LOG(LogTemp, Warning, TEXT("---Detach--"));
+	//UE_LOG(LogTemp, Warning, TEXT("---Detach--"));
 	Arrow->DetachRootComponentFromParent();
 	
 	FHitResult HitResult = Cast<AMainCharacter>(GetOwner())->LineTrace();
 	
-	//Arrow->DetachRootComponentFromParent();
-	Arrow->Fire(HitResult.Actor.Get(), Cast<AMainCharacter>(GetOwner())->FollowCamera->GetForwardVector());
+	Arrow->Fire(HitResult.Actor.Get(), Cast<AMainCharacter>(GetOwner())->FollowCamera->GetForwardVector(), HitResult.ImpactPoint);
 	Arrow = nullptr;
 }
 void ABow::SetArrowType()
@@ -110,7 +107,7 @@ void ABow::SetArrowType()
 	//범위내 설정
 	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EArrowState"), true);
 	if (!EnumPtr) return;
-	if(ArrowType >= EnumPtr->NumEnums())
+	if(ArrowType >= EnumPtr->NumEnums()-2)
 		ArrowType=0;
 	//현재 화살의 타입 결정
 	if(Arrow != nullptr)

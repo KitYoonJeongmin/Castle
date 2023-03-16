@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Arrow.h"
@@ -34,7 +34,7 @@ AArrow::AArrow()
 	RootComponent = Arrow;
 	
 
-	//ÆÄÆ¼Å¬
+	//ï¿½ï¿½Æ¼Å¬
 	static ConstructorHelpers::FObjectFinder<UParticleSystem> Fire(TEXT("ParticleSystem'/Game/AMyDirectory/Materials/P_Buff_JumpDiveFire_02.P_Buff_JumpDiveFire_02'"));
 	if (Fire.Succeeded())
 	{
@@ -45,7 +45,7 @@ AArrow::AArrow()
 	{
 		PoisionParticle = Poision.Object;
 	}
-	//¸ÓÆ¼¸®¾ó
+	//ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½
 	static ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("Material'/Game/AMyDirectory/Materials/M_ArrowSkill1.M_ArrowSkill1'"));
 	if (MaterialAsset.Succeeded())
 	{
@@ -58,36 +58,34 @@ AArrow::AArrow()
 	}
 
 
-	//µ¶
-	PoisionTime = 10.f;	//10ÃÊ
-	
+	//ï¿½ï¿½
+	PoisionTime = 10.f;	//10ï¿½ï¿½
+	CurrentState = EArrowState::Default;	
 }
 
 // Called when the game starts or when spawned
 void AArrow::BeginPlay()
 {
 	Super::BeginPlay();
-	//SetLightMat(false);
 	
-	// °ãÄ§ µ¨¸®°ÔÀÌÆ® ÇÔ¼ö µî·Ï
+	// ï¿½ï¿½Ä§ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ô¼ï¿½ ï¿½ï¿½ï¿½
 	Arrow->OnComponentBeginOverlap.AddDynamic(this, &AArrow::ArrowBeginOverlap);
 	
 }
 
 void AArrow::ArrowBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//ÀÌ¸§ Ãâ·Â(µð¹ö±ë)
-	UE_LOG(LogTemp, Warning, TEXT("Arrow Hit Actor: %s"), *OtherActor->GetName());
+	//ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½)
+	//UE_LOG(LogTemp, Warning, TEXT("Arrow Hit Actor: %s"), *OtherActor->GetName());
 	
-	//Ãæµ¹°¨Áö ºñÈ°¼ºÈ­
+	//ï¿½æµ¹ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È°ï¿½ï¿½È­
 	Arrow->SetSimulatePhysics(false);
 	Arrow->SetNotifyRigidBodyCollision(false);
 	Arrow->SetCollisionProfileName(TEXT("NoCollision"));
-	//SetActorLocation(GetActorLocation());
-	
-	//
+
 	this->AttachToActor(OtherActor, FAttachmentTransformRules::KeepWorldTransform);
-	//enemy¶ó¸é µ¥¹ÌÁö Àü´Þ
+	
+	//enemy
 	if (Cast<AKnightEnemy>(OtherActor) != nullptr)
 	{
 		FDamageEvent DamageEvent;
@@ -97,14 +95,13 @@ void AArrow::ArrowBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 			OtherActor->TakeDamage(10.f, DamageEvent, GetWorld()->GetFirstPlayerController(), this);
 			break;
 		case EArrowState::Fire:
-			OtherActor->TakeDamage(15.f, DamageEvent, GetWorld()->GetFirstPlayerController(), this);
+			OtherActor->TakeDamage(20.f, DamageEvent, GetWorld()->GetFirstPlayerController(), this);
 			break;
 		case EArrowState::Poision:
 			OtherActor->TakeDamage(10.f, DamageEvent, GetWorld()->GetFirstPlayerController(), this);
 			PoisionActor = OtherActor;
 			break;
 		}
-		
 	}
 
 }
@@ -114,9 +111,10 @@ void AArrow::ArrowBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 void AArrow::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//µ¶ Áö¼Ó °ø°Ý
+	//ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	if (CurrentState == EArrowState::Poision && PoisionActor != nullptr)
 	{
+		
 		RemainTime -= DeltaTime;
 		if (RemainTime <= 0.f)
 		{
@@ -127,16 +125,16 @@ void AArrow::Tick(float DeltaTime)
 	}
 }
 
-void AArrow::Fire(AActor* Target, FVector ForwardVec)
+void AArrow::Fire(AActor* Target, FVector ForwardVec, FVector HitPoint)
 {
-	//ÄÝ¸®Àü ¼³Á¤
+	//ï¿½Ý¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	Arrow->SetSimulatePhysics(true);
 	Arrow->SetNotifyRigidBodyCollision(true);
 	Arrow->SetCollisionProfileName(TEXT("Arrow"));
 
-	//¹ß»ç °ü·Ã º¯¼ö ¼³Á¤
-	FVector startLoc = GetActorLocation();      // ¹ß»ç ÁöÁ¡
-	FVector targetLoc; // Å¸°Ù ÁöÁ¡.
+	//ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	FVector startLoc = GetActorLocation();      // ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½
+	FVector targetLoc; // Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
 
 	if (Target == nullptr)
 	{
@@ -145,23 +143,16 @@ void AArrow::Fire(AActor* Target, FVector ForwardVec)
 	}
 	else
 	{
-		//µð¹ö±×
+		//ï¿½ï¿½ï¿½ï¿½ï¿½
 		//UE_LOG(LogTemp, Warning, TEXT("Arrow Target Actor: %s"), *HitResult.Actor->GetName());
-		targetLoc = Target->GetActorLocation();
+		targetLoc = HitPoint;
 	}
 	
-	//Æ÷¹°¼± ¹ß»ç
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß»ï¿½
 	float arcValue = 0.993f;                       // ArcParam (0.0-1.0)
-	FVector outVelocity = FVector::ZeroVector;   // °á°ú Velocity
+	FVector outVelocity = FVector::ZeroVector;   // ï¿½ï¿½ï¿½ Velocity
 	if (UGameplayStatics::SuggestProjectileVelocity_CustomArc(this, outVelocity, startLoc, targetLoc, GetWorld()->GetGravityZ(), arcValue))
 	{
-		//FPredictProjectilePathParams predictParams(20.0f, startLoc, outVelocity, 15.0f);   // 20: tracing º¸¿©Áú ÇÁ·ÎÁ§Å¸ÀÏ Å©±â, 15: ½Ã¹°·¹ÀÌ¼ÇµÇ´Â Max ½Ã°£(ÃÊ)
-		//predictParams.DrawDebugTime = 15.0f;     //µð¹ö±× ¶óÀÎ º¸¿©Áö´Â ½Ã°£ (ÃÊ)
-		//predictParams.DrawDebugType = EDrawDebugTrace::Type::ForDuration;  // DrawDebugTime À» ÁöÁ¤ÇÏ¸é EDrawDebugTrace::Type::ForDuration ÇÊ¿ä.
-		//predictParams.OverrideGravityZ = GetWorld()->GetGravityZ();
-		//FPredictProjectilePathResult result;
-		//UGameplayStatics::PredictProjectilePath(this, predictParams, result);
-		
 		Arrow->AddImpulse(outVelocity);
 		Arrow->AddForce(ForwardVec*9000.f);
 	}
@@ -170,7 +161,7 @@ void AArrow::Fire(AActor* Target, FVector ForwardVec)
 
 void AArrow::FireStrate(FVector TargetLoc)
 {
-	//ÄÝ¸®Àü ¼³Á¤
+	//ï¿½Ý¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	Arrow->SetSimulatePhysics(true);
 	Arrow->SetNotifyRigidBodyCollision(true);
 	Arrow->SetCollisionProfileName(TEXT("Arrow"));
@@ -180,9 +171,6 @@ void AArrow::FireStrate(FVector TargetLoc)
 
 void AArrow::SetArrowState(uint8 ArrowStateNum)
 {
-	//const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EArrowState"), true);
-	//if (!EnumPtr) return;
-	//CurrentState = EnumPtr->GetNameByValue(ArrowStateNum);
 	CurrentState = (EArrowState)ArrowStateNum;
 	if (ArrowParticle != nullptr)
 		ArrowParticle->DestroyComponent();
@@ -207,12 +195,6 @@ void AArrow::SetLightMat(bool isLight)
 		Arrow->SetStaticMesh(LightArrowMesh);
 	else
 		Arrow->SetStaticMesh(DefaultArrowMesh);
-
-
-	//RootComponent = CurrentMesh;
-	//UStaticMesh a = (Arrow->GetStaticMesh());
-	//Arrow->SetStaticMesh(CurrentMesh);
-	
 }
 
 UStaticMeshComponent* AArrow::GetMesh()

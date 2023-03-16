@@ -36,7 +36,8 @@ public:
 	bool isInForward = false;
 	bool isInHeight = false;
 	bool isFinish = false;
-	
+	bool IsFalling = false;
+
 	//left&right movement
 	void LeftTrace();
 	void RightTrace();
@@ -75,16 +76,26 @@ public:
 	void JumpUp(bool jumpUp);
 	bool CanJumpUp = false;
 
-	bool IsFalling = false;
+	//Hand IK
+	void IKHandTrace();
+	FVector IKRightHand;
+	FVector IKLeftHand;
+
 private:
 	FVector CharLoc;
 	FVector CharFor;
 	FVector HeightLoc;
+
 	FVector WallNormal;
 	FVector WallLoc;
+
 	FVector JumpHightLoc;
 	FVector JumpWallLoc;
 	FVector JumpWallNormal;
+
+	FVector SideJumpLoc;
+	FVector SideJumpWallLoc;
+
 
 	ACharacter* Character;
 
@@ -103,4 +114,8 @@ private:
 		UArrowComponent* RightLedgeArrow;
 	UPROPERTY(VisibleAnywhere, Category = "TraceArrow")
 		UArrowComponent* UpArrow;
+	UPROPERTY(VisibleAnywhere, Category = "TraceArrow")
+		UArrowComponent* LeftHandArrow;
+	UPROPERTY(VisibleAnywhere, Category = "TraceArrow")
+		UArrowComponent* RightHandArrow;
 };
