@@ -3,6 +3,7 @@
 
 #include "BTTask_DecreaseDetectLevel.h"
 #include "MainEnemyAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 UBTTask_DecreaseDetectLevel::UBTTask_DecreaseDetectLevel()
 {
@@ -13,8 +14,12 @@ EBTNodeResult::Type UBTTask_DecreaseDetectLevel::ExecuteTask(UBehaviorTreeCompon
 {
 
 	EBTNodeResult::Type Result = Super::ExecuteTask(OwnerComp, NodeMemory);
-
-	Cast<AMainEnemyAIController>(OwnerComp.GetAIOwner())->UpdateDetectLevel(false);
+	AMainEnemyAIController* Controller = Cast<AMainEnemyAIController>(OwnerComp.GetAIOwner());
+	Controller->UpdateDetectLevel(false);
+	if (Controller->DetectLevel <1.f)
+	{
+		Controller->GetBlackboardComponent()->SetValueAsObject(AMainEnemyAIController::TargetKey, nullptr);
+	}
 	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	return EBTNodeResult::Succeeded;
 }

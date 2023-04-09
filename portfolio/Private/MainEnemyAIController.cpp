@@ -53,7 +53,7 @@ AMainEnemyAIController::AMainEnemyAIController()
 
 	SightConfig->DetectionByAffiliation.bDetectEnemies = true; // 소속별 탐지 적
 	SightConfig->DetectionByAffiliation.bDetectFriendlies = true; // 소속별 탐지 팀
-	SightConfig->DetectionByAffiliation.bDetectNeutrals = false; // 소속별 탐지 중립
+	SightConfig->DetectionByAffiliation.bDetectNeutrals = true; // 소속별 탐지 중립
 	
 	GetPerceptionComponent()->SetDominantSense(SightConfig->GetSenseImplementation());
 	GetPerceptionComponent()->ConfigureSense(*SightConfig);
@@ -64,17 +64,15 @@ AMainEnemyAIController::AMainEnemyAIController()
 
 	HearingConfig->HearingRange = 3000.f;	//범위 설정
 	HearingConfig->LoSHearingRange = 3000.f;	//범위 디버거
-	HearingConfig->SetMaxAge(1.f);
+	HearingConfig->SetMaxAge(5.f);
 
 	HearingConfig->DetectionByAffiliation.bDetectEnemies = true; // 소속별 탐지 적
 	HearingConfig->DetectionByAffiliation.bDetectFriendlies = true; // 소속별 탐지 팀
-	HearingConfig->DetectionByAffiliation.bDetectNeutrals = true; // 소속별 탐지 중립
+	HearingConfig->DetectionByAffiliation.bDetectNeutrals = false; // 소속별 탐지 중립
 
 	GetPerceptionComponent()->ConfigureSense(*HearingConfig);	//감각 추가
 
-	//Detect Distance
-	DetectDistnace.Add(600.f);
-	DetectDistnace.Add(1200.f);
+
 }
 
 void AMainEnemyAIController::OnPossess(APawn* InPawn)
@@ -102,38 +100,9 @@ void AMainEnemyAIController::OnPossess(APawn* InPawn)
 	
 }
 
-
-void AMainEnemyAIController::StopAI()
-{
-	if (GetBrainComponent() == nullptr) return;
-
-
-	auto BehaviorTreeComponent = Cast<UBehaviorTreeComponent>(BrainComponent);
-	if (IsValid(BehaviorTreeComponent))
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("-------Stop---------"));
-		Blackboard->SetValueAsBool(IsDeadKey, true);
-		BehaviorTreeComponent->StopLogic(FString::Printf(TEXT("")));
-	}
-}
-
-void AMainEnemyAIController::StartAI()
-{
-
-	auto BehaviorTreeComponent = Cast<UBehaviorTreeComponent>(BrainComponent);
-	if (IsValid(BehaviorTreeComponent))
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("-------Start---------"));
-		Blackboard->SetValueAsBool(IsDeadKey, false);
-		BehaviorTreeComponent->StartLogic();
-	}
-}
-
-
-
 void AMainEnemyAIController::OnTargetDetected(AActor* actor, FAIStimulus const Stimulus)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("Sense Update: %f"), Stimulus.GetAge());
+	
 	if (Blackboard->GetValueAsBool(IsDeadKey)) return;
 	
 	switch (Stimulus.Type) 
@@ -145,19 +114,34 @@ void AMainEnemyAIController::OnTargetDetected(AActor* actor, FAIStimulus const S
 		Hearing(actor, Stimulus);
 		break;
 	}
+	if (!Stimulus.WasSuccessfullySensed())
+	{
+		Blackboard->SetValueAsBool(CanSeePlayerKey, false);
+		//Blackboard->SetValueAsObject(TargetKey, nullptr);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("Can Not See")));
+	
+	}
 }
 
 void AMainEnemyAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (targetTeam != nullptr && targetTeam->GetGenericTeamId() == FGenericTeamId(2))
+	
+	//if (targetTeam != nullptr && targetTeam->GetGenericTeamId() == FGenericTeamId(2))
+	//{
+	//	Blackboard->SetValueAsBool(CanSeePlayerKey, false);
+	//	//Blackboard->SetValueAsObject(TargetKey, nullptr);
+	//}
+	//else if(targetTeam != nullptr&&Blackboard->GetValueAsObject(TargetKey) != nullptr)
+	//{
+	//	Blackboard->SetValueAsBool(CanSeePlayerKey, true);
+	//}
+	if (0.f < DetectLevel&& DetectLevel < 100.f)
 	{
-		Blackboard->SetValueAsBool(CanSeePlayerKey, false);
-		//Blackboard->SetValueAsObject(TargetKey, nullptr);
-	}
-	else if(targetTeam != nullptr&&Blackboard->GetValueAsObject(TargetKey) != nullptr)
-	{
-		Blackboard->SetValueAsBool(CanSeePlayerKey, true);
+		if (targetTeam != nullptr && targetTeam->GetGenericTeamId() == FGenericTeamId(2))
+		{
+			Blackboard->SetValueAsBool(CanSeePlayerKey, false);
+		}
 	}
 }
 
@@ -167,14 +151,12 @@ void AMainEnemyAIController::Sight(AActor* actor, FAIStimulus const Stimulus)
 	{
 		Blackboard->SetValueAsBool(CanSeePlayerKey, true);
 		Blackboard->SetValueAsObject(TargetKey, actor);
+		Blackboard->SetValueAsVector("LastTargetLoc", actor->GetActorLocation());
 		targetTeam = Cast<IGenericTeamAgentInterface>(Cast<APawn>(actor)->GetController());
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Can See")));
+		return;
 	}
-
-	if(!Stimulus.WasSuccessfullySensed())
-	{
-		Blackboard->SetValueAsBool(CanSeePlayerKey, false);
-		//Blackboard->SetValueAsObject(TargetKey, nullptr);
-	}
+	
 }
 
 void AMainEnemyAIController::Hearing(AActor* actor, FAIStimulus const Stimulus)
@@ -208,7 +190,7 @@ void AMainEnemyAIController::UpdateDetectLevel(bool CanIncrease)
 	}
 	else if(DetectLevel > 0.f)
 	{
-		DetectLevel -= 0.5f;
+		DetectLevel -= 0.8f;
 		if (DetectLevel <= 0.f)
 		{
 			KnightEnemy->EnableDetectBar(false);

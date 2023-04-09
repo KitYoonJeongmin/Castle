@@ -52,7 +52,7 @@ void USkillNodeWidget::SetNodeState(int32 StateNum)
 	}
 
 	SkillBorder->SetColorAndOpacity(SkillBorderColor);
-	SkillImage->SetColorAndOpacity(SkillImageColor);
+	SkillImage->SetColorAndOpacity(SkillImageColor); 
 	SkillBtn->SetIsEnabled(EnableBtn);
 
 	

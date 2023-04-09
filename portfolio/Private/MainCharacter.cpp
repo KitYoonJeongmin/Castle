@@ -21,7 +21,6 @@
 #include "Arrow.h"
 #include "Bow.h"
 #include "ClimbingComponent.h"
-#include "Daggle.h"
 #include "MainAnimInstance.h"
 #include "MainCharacterStatComponent.h"
 #include "MainGameModeBase.h"

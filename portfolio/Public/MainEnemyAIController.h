@@ -28,8 +28,7 @@ public:
 	static const FName CanHearWhistleKey;
 	static const FName WhistleLocKey;
 
-	void StopAI();
-	void StartAI();
+
 
 	void Sight(AActor* actor, FAIStimulus const Stimulus);
 	void Hearing(AActor* actor, FAIStimulus const Stimulus);
@@ -51,9 +50,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		float AIFieldOfView = 75.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AISightAge = 2.f;
+		float AISightAge = 5.f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float AILastSeenLocation = 900.f;
+		float AILastSeenLocation = 0.f;
 private:
 	UPROPERTY()
 		class UBehaviorTree* BTAsset;
@@ -76,7 +75,7 @@ private:
 	bool isDetect = false;
 	float Distance;
 	float TargetLevel = 0.f;
-	TArray<float> DetectDistnace;
+
 	IGenericTeamAgentInterface* targetTeam;
 public:
 	float DetectLevel = 0.f;

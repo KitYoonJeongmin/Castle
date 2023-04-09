@@ -21,10 +21,10 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 
 	if (nullptr == Enemy ||(KnightEnemy!= nullptr && !KnightEnemy->IsSetWeapon()))
 		return EBTNodeResult::Failed;
-	/*
+	
 	if (KnightEnemy!= nullptr &&!KnightEnemy->IsSetWeapon())
 		KnightEnemy->UseSword();
-	*/
+	
 	Enemy->Attack();
 
 	return EBTNodeResult::InProgress;

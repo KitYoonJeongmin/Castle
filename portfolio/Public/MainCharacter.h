@@ -226,4 +226,5 @@ public:
 	UParticleSystem* HitParticle;
 	UPROPERTY()
 		class UInventoryComponent* Inventory;
+
 };
