@@ -17,9 +17,15 @@ void UTitleUserWidget::NativeConstruct()
 	StartBtn = Cast<UButton>(GetWidgetFromName(TEXT("StartButton")));
 	EndBtn = Cast<UButton>(GetWidgetFromName(TEXT("EndButton")));
 
-	StartBtn->OnClicked.AddDynamic(this, &UTitleUserWidget::StartGame);
-	EndBtn->OnClicked.AddDynamic(this, &UTitleUserWidget::ExitGame);
+	if(::IsValid(StartBtn))
+		StartBtn->OnClicked.AddDynamic(this, &UTitleUserWidget::StartGame);
+	if (::IsValid(EndBtn))
+		EndBtn->OnClicked.AddDynamic(this, &UTitleUserWidget::ExitGame);
+
+	
 }
+
+
 
 void UTitleUserWidget::StartGame()
 {
@@ -29,4 +35,9 @@ void UTitleUserWidget::StartGame()
 void UTitleUserWidget::ExitGame()
 {
 	UKismetSystemLibrary::QuitGame(GetWorld(), nullptr, EQuitPreference::Quit, false);
+}
+
+void UTitleUserWidget::PlayFade()
+{
+	PlayAnimation(Fade);
 }

@@ -62,37 +62,37 @@ void UKnightEnemyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 }
 void UKnightEnemyAnimInstance::PlayDrawSwordMontage()
 {
-	check(!IsDead);
+	if (IsDead) return;
 	IsWeapon = true;
 	Montage_Play(EnemyDrawSwordMontage, 1.0f);
 }
 void UKnightEnemyAnimInstance::PlayAttackMontage()
 {
-	check(!IsDead);
+	if (IsDead) return;
 	Montage_Play(EnemyAttackMontage, 1.2f);
 }
 
 void UKnightEnemyAnimInstance::PlayPainMontage()
 {
-	check(!IsDead);
+	if (IsDead) return;
 	if (EnemyPainMontage == nullptr) return;
 	Montage_Play(EnemyPainMontage, 1.f);
 }
 void UKnightEnemyAnimInstance::PlayNuckMontage()
 {
-	check(!IsDead);
+	if (IsDead) return;
 	if (EnemyNuckMontage == nullptr) return;
 	Montage_Play(EnemyNuckMontage, 1.f);
 }
 void UKnightEnemyAnimInstance::PlayAssassinationAnim()
 {
-	check(!IsDead);
+	if (IsDead) return;
 	if (AssassinationAnim == nullptr) return;
 	Montage_Play(AssassinationAnim, 1.f);
 }
 void UKnightEnemyAnimInstance::JumpToAttackMontageSection(int32 NewSection)
 {
-	check(!IsDead);
+	if (IsDead) return;
 	check(Montage_IsPlaying(EnemyAttackMontage));
 	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), EnemyAttackMontage);
 }

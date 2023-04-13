@@ -86,14 +86,14 @@ void AEnemy::AttackCheck()
 	FColor DrawColor = bResult ? FColor::Green : FColor::Red;
 	float DebugLifeTime = 5.0f;
 
-	DrawDebugCapsule(GetWorld(),
+	/*DrawDebugCapsule(GetWorld(),
 		Center,
 		HalfHeight,
 		50.f,
 		CapsuleRot,
 		DrawColor,
 		false,
-		DebugLifeTime);
+		DebugLifeTime);*/
 
 
 #endif	//Damage ����

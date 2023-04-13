@@ -201,6 +201,7 @@ protected:
 	UFUNCTION()
 		void AnimNotify_Dismount();
 
+
 	FName GetAttackMontageSectionName(int32 Section);
 
 protected:

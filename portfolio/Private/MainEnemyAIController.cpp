@@ -3,6 +3,7 @@
 
 #include "MainEnemyAIController.h"
 #include "NavigationSystem.h"
+#include "Navigation/CrowdFollowingComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardData.h"
@@ -72,7 +73,8 @@ AMainEnemyAIController::AMainEnemyAIController()
 
 	GetPerceptionComponent()->ConfigureSense(*HearingConfig);	//감각 추가
 
-
+	//CrowdComponent
+	CrowdFollowingComponent = CreateDefaultSubobject<UCrowdFollowingComponent>(TEXT("CrowdFollowingComponent"));
 }
 
 void AMainEnemyAIController::OnPossess(APawn* InPawn)
@@ -114,11 +116,11 @@ void AMainEnemyAIController::OnTargetDetected(AActor* actor, FAIStimulus const S
 		Hearing(actor, Stimulus);
 		break;
 	}
-	if (!Stimulus.WasSuccessfullySensed())
+	if (!Stimulus.WasSuccessfullySensed()&& Cast<AMainCharacter>(actor))
 	{
 		Blackboard->SetValueAsBool(CanSeePlayerKey, false);
 		//Blackboard->SetValueAsObject(TargetKey, nullptr);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("Can Not See")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("%s: Can Not See"), *(actor->GetName())));
 	
 	}
 }
@@ -127,15 +129,6 @@ void AMainEnemyAIController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	
-	//if (targetTeam != nullptr && targetTeam->GetGenericTeamId() == FGenericTeamId(2))
-	//{
-	//	Blackboard->SetValueAsBool(CanSeePlayerKey, false);
-	//	//Blackboard->SetValueAsObject(TargetKey, nullptr);
-	//}
-	//else if(targetTeam != nullptr&&Blackboard->GetValueAsObject(TargetKey) != nullptr)
-	//{
-	//	Blackboard->SetValueAsBool(CanSeePlayerKey, true);
-	//}
 	if (0.f < DetectLevel&& DetectLevel < 100.f)
 	{
 		if (targetTeam != nullptr && targetTeam->GetGenericTeamId() == FGenericTeamId(2))
@@ -153,7 +146,7 @@ void AMainEnemyAIController::Sight(AActor* actor, FAIStimulus const Stimulus)
 		Blackboard->SetValueAsObject(TargetKey, actor);
 		Blackboard->SetValueAsVector("LastTargetLoc", actor->GetActorLocation());
 		targetTeam = Cast<IGenericTeamAgentInterface>(Cast<APawn>(actor)->GetController());
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Can See")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Can See")));
 		return;
 	}
 	

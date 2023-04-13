@@ -16,14 +16,19 @@ class PORTFOLIO_API UTitleUserWidget : public UUserWidget
 public:
 	UTitleUserWidget(const FObjectInitializer& ObjectInitializer);
 	virtual void NativeConstruct() override;
+	UFUNCTION()
+		void StartGame();
+	UFUNCTION()
+		void ExitGame();
+	UFUNCTION()
+		void PlayFade();
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UButton* StartBtn;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UButton* EndBtn;
-
-	UFUNCTION()
-		void StartGame();
-	UFUNCTION()
-		void ExitGame();
+	UPROPERTY(BlueprintReadOnly, Transient,  meta = (BindWidgetAnim))
+		class UWidgetAnimation* Fade;
+	
 };

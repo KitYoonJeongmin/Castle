@@ -161,7 +161,7 @@ void UClimbingComponent::ForwardTrace()
 			ObjectTypes,
 			false,
 			ActorsToIgnore, // ������ ���� ���ٰ��ص� null�� ���� �� ����.
-			EDrawDebugTrace::ForOneFrame,
+			EDrawDebugTrace::None,
 			HitResult,
 			true
 			// ���� �ؿ� 3���� �⺻ ������ ������. �ٲٷ��� ������ ��.
@@ -184,7 +184,7 @@ void UClimbingComponent::ForwardTrace()
 			ObjectTypes,
 			false,
 			ActorsToIgnore, // ������ ���� ���ٰ��ص� null�� ���� �� ����.
-			EDrawDebugTrace::ForOneFrame,
+			EDrawDebugTrace::None,
 			HitResult,
 			true
 			// ���� �ؿ� 3���� �⺻ ������ ������. �ٲٷ��� ������ ��.
@@ -371,11 +371,11 @@ void UClimbingComponent::JumpLeftTrace()
 	FVector StartLoc = LeftLedgeArrow->GetComponentLocation();
 	FVector EndLoc = StartLoc + Character->GetActorRightVector() * -200.f;
 	if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), StartLoc, EndLoc, 30.f, ObjectTypes,
-		false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
+		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
 	{
 		SideJumpLoc = HitResult.ImpactPoint;
 		if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), SideJumpLoc - CharFor * 100.f, SideJumpLoc, 30.f, ObjectTypes,
-			false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
+			false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
 		{
 			SideJumpWallLoc = HitResult.ImpactPoint;
 			CanJumpLeft = !CanMoveLeft;
@@ -403,11 +403,11 @@ void UClimbingComponent::JumpRightTrace()
 	FVector StartLoc = RightLedgeArrow->GetComponentLocation();
 	FVector EndLoc = StartLoc + Character->GetActorRightVector()*200.f;
 	if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), StartLoc, EndLoc, 30.f, ObjectTypes,
-	   false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
+	   false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
 	{
 		SideJumpLoc = HitResult.ImpactPoint;
 		if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), SideJumpLoc -CharFor*100.f, SideJumpLoc, 30.f, ObjectTypes,
-			false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResult, true))
+			false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true))
 		{
 			SideJumpWallLoc = HitResult.ImpactPoint;
 			CanJumpRight = !CanMoveRight;
@@ -625,7 +625,7 @@ void UClimbingComponent::IKHandTrace()
 		FVector HitPoint(HitResult.ImpactPoint);
 		FHitResult HitResultLeft;
 		if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), HitPoint+FVector(0.f,0.f,20.f), HitPoint, 5.f, ObjectTypes,
-			false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResultLeft, true))
+			false, ActorsToIgnore, EDrawDebugTrace::None, HitResultLeft, true))
 		{
 			IKLeftHand = HitPoint;
 			IKLeftHand.Z = HitResultLeft.ImpactPoint.Z;
@@ -640,7 +640,7 @@ void UClimbingComponent::IKHandTrace()
 		FVector HitPoint(HitResult2.ImpactPoint);
 		FHitResult HitResultRight;
 		if (UKismetSystemLibrary::SphereTraceSingleForObjects(GetWorld(), HitPoint + FVector(0.f, 0.f, 20.f), HitPoint, 5.f, ObjectTypes,
-			false, ActorsToIgnore, EDrawDebugTrace::ForOneFrame, HitResultRight, true))
+			false, ActorsToIgnore, EDrawDebugTrace::None, HitResultRight, true))
 		{
 			IKRightHand = HitPoint;
 			IKRightHand.Z = HitResultRight.ImpactPoint.Z;

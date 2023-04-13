@@ -114,7 +114,15 @@ float ABossCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	if (HealthPoint <= 0.f)
 	{
 		EnemyAnim->SetDeadAnim();
-		Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()))->ClearWidget->AddToViewport();
+		FTimerHandle WaitHandle;
+		float WaitTime = 1.5f; 
+		GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
+			{
+				AMainGameModeBase* GameMode = Cast<AMainGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+				GameMode->ClearWidget->AddToViewport();
+				Cast<UTitleUserWidget>(GameMode->ClearWidget)->PlayFade();
+			}), WaitTime, false);
+		
 	}
 	MainHUDWidget->UpdateHPWidget(HealthPoint/10.f);
 	return FinalDamage;
@@ -124,7 +132,7 @@ void ABossCharacter::Attack()
 {
 	if (IsAttacking) return;
 	IsAttacking = true;
-	UE_LOG(LogTemp, Warning, TEXT("-----Is Boss Attack-----"));
+	//UE_LOG(LogTemp, Warning, TEXT("-----Is Boss Attack-----"));
 	EnemyAnim->PlayAttackMontage();
 }
 

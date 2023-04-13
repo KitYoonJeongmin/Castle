@@ -311,8 +311,6 @@ void UMainAnimInstance::SetRandomAttackMon()
 }
 
 
-
-
 void UMainAnimInstance::FootIK(float DeltaTime)
 {
 	if (Character && !Character->GetCharacterMovement()->IsFalling()) // No Falling
@@ -374,7 +372,7 @@ TTuple<bool, float> UMainAnimInstance::CapsuleDistance(FName SocketName, ACharac
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		true,
 		IgnoreActors,
-		EDrawDebugTrace::ForOneFrame,
+		EDrawDebugTrace::None,
 		HitResult,
 		false);
 
@@ -399,7 +397,7 @@ TTuple<bool, float, FVector> UMainAnimInstance::FootLineTrace(FName SocketName, 
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		true,
 		IgnoreActors,
-		EDrawDebugTrace::ForOneFrame,
+		EDrawDebugTrace::None,
 		HitResult,
 		false);
 
@@ -520,6 +518,7 @@ void UMainAnimInstance::AnimNotify_Dismount()
 	
 	CanMount = false;
 }
+
 FName UMainAnimInstance::GetAttackMontageSectionName(int32 Section)
 {
 	check(FMath::IsWithinInclusive<int32>(Section, 1,3));

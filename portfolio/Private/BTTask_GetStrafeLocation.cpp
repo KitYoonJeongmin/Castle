@@ -31,6 +31,6 @@ EBTNodeResult::Type UBTTask_GetStrafeLocation::ExecuteTask(UBehaviorTreeComponen
 	}
 
 	OwnerComp.GetBlackboardComponent()->SetValueAsVector(AMainEnemyAIController::StrafeLocKey, StrafeLoc);
-	DrawDebugLine(GetWorld(), KnightEnemy->GetActorLocation(), StrafeLoc, FColor::Cyan, false, 0.27f);
+	//DrawDebugLine(GetWorld(), KnightEnemy->GetActorLocation(), StrafeLoc, FColor::Cyan, false, 0.27f);
 	return EBTNodeResult::Type();
 }

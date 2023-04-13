@@ -26,6 +26,7 @@ void AStartGameMode::BeginPlay()
 		{
 			// 위젯을 뷰포트에 추가한다
 			TitleUserWidget->AddToViewport();
+			TitleUserWidget->PlayFade();
 		}
 	}
 	else

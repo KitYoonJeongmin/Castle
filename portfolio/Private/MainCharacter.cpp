@@ -84,6 +84,7 @@ AMainCharacter::AMainCharacter()
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 450.f;
 	CameraBoom->bUsePawnControlRotation = true;
+	CameraBoom->bDoCollisionTest = false;
 
 	// Camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -223,7 +224,7 @@ void AMainCharacter::Skill1()
 				TArray<TEnumAsByte<EObjectTypeQuery>> objectType;
 				objectType.Emplace(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
 				if (UKismetSystemLibrary::SphereTraceMultiForObjects(this, GetActorLocation(), GetActorLocation(), 700.f, objectType,
-					false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, hits, true))
+					false, TArray<AActor*>(), EDrawDebugTrace::None, hits, true))
 				{
 					for (int i = 0; i < hits.Num(); i++)
 					{
@@ -280,7 +281,7 @@ void AMainCharacter::Skill2()
 				TArray<TEnumAsByte<EObjectTypeQuery>> objectType;
 				objectType.Emplace(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
 				if (UKismetSystemLibrary::SphereTraceMultiForObjects(this, BeforePos, ForwardPos, 150.f, objectType,
-					false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, hits, true))
+					false, TArray<AActor*>(), EDrawDebugTrace::None, hits, true))
 				{
 					for (int i = 0; i < hits.Num(); i++)
 					{
@@ -432,6 +433,7 @@ void AMainCharacter::SetWeapon(EWeapon Weapon)
 void AMainCharacter::MoveForward(float Value)
 {
 	if (ClimbingComponent->isClimbing) return;
+	AddMovementInput(FRotationMatrix(FRotator(0.0f, GetControlRotation().Yaw, 0.0f)).GetUnitAxis(EAxis::X), Value);
 	if ((Controller != nullptr) && (Value != 0.f))
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -447,6 +449,7 @@ void AMainCharacter::MoveForward(float Value)
 void AMainCharacter::MoveRight(float Value)
 {
 	if (ClimbingComponent->isClimbing) return;
+	AddMovementInput(FRotationMatrix(FRotator(0.0f, GetControlRotation().Yaw, 0.0f)).GetUnitAxis(EAxis::Y), Value);
 	if ((Controller != nullptr) && (Value != 0.f))
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -508,6 +511,7 @@ void AMainCharacter::Move(float DeltaTime)
 void AMainCharacter::Turn(float Rate)
 {
 	if (NearEnemy != nullptr) return;
+
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
@@ -536,7 +540,6 @@ void AMainCharacter::Attack()
 			float degree = FVector::DotProduct(FollowCamera->GetForwardVector(), Enemy->GetActorForwardVector());
 			if (Distance < 700.f  && degree > 0)
 			{
-				
 				UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), Enemy->GetActorLocation()-Enemy->GetActorRotation().Vector()*200.f, Enemy->GetActorRotation(), false, false, 0.3f, false, EMoveComponentAction::Type::Move, Info);
 				MainAnim->PlayAssassinationMontage();
 				Enemy->GetCharacterMovement()->DisableMovement();
@@ -835,14 +838,14 @@ void AMainCharacter::AttackCheck()
 	FColor DrawColor = bResult ? FColor::Green : FColor::Red;
 	float DebugLifeTime = 5.0f;
 
-	DrawDebugCapsule(GetWorld(),
+	/*DrawDebugCapsule(GetWorld(),
 		Center,
 		HalfHeight,
 		50.f,
 		CapsuleRot,
 		DrawColor,
 		false,
-		DebugLifeTime);
+		DebugLifeTime);*/
 
 
 #endif	//Damage ����
@@ -854,7 +857,7 @@ void AMainCharacter::AttackCheck()
 		}
 
 		FDamageEvent DamageEvent;
-		HitResult.Actor->TakeDamage(500.0f, DamageEvent, GetController(), this);
+		HitResult.Actor->TakeDamage(40.0f, DamageEvent, GetController(), this);
 	}
 }
 
@@ -907,7 +910,7 @@ void AMainCharacter::Tick(float DeltaTime)
 	//DrawDebugCapsule(GetWorld(), GetActorLocation(), 96.0f, 42.f,FRotationMatrix::MakeFromZ(GetActorUpVector()).ToQuat(), FColor::Green, false, DeltaTime*2.f);
 	CameraBoom->TargetArmLength = FMath::FInterpTo(CameraBoom->TargetArmLength, ArmLengthTo, DeltaTime, 3.f);
 	
-	Move(DeltaTime);
+	//Move(DeltaTime);
 	ZoomFunction(DeltaTime);
 	if (isZooming) { LineTrace(); }
 	
@@ -926,6 +929,11 @@ void AMainCharacter::Tick(float DeltaTime)
 			GetController()->SetControlRotation(FRotator(LookPitch, LookYaw, GetControlRotation().Roll));
 		}
 		
+	}
+	else if (NearEnemy != nullptr)
+	{
+		NearEnemy->EnableTargetOnWidget(false);
+		NearEnemy = nullptr;
 	}
 
 	//Actor Rotation
@@ -982,7 +990,7 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		PlayerInputComponent->BindAction("Skill1", IE_Pressed, this, &AMainCharacter::Skill1);
 		PlayerInputComponent->BindAction("Skill2", IE_Pressed, this, &AMainCharacter::Skill2);
 		PlayerInputComponent->BindAction("Sword", IE_Pressed, this, &AMainCharacter::UseSword);
-		//PlayerInputComponent->BindAction("Hand", IE_Pressed, this, &AMainCharacter::UseHand);
+		//Bow
 		PlayerInputComponent->BindAction("Bow", IE_Pressed, this, &AMainCharacter::UseBow);
 		PlayerInputComponent->BindAction("ArrowChangePlus", IE_Pressed, this, &AMainCharacter::ArrowChangePlus);
 		//climb
@@ -1138,7 +1146,7 @@ void AMainCharacter::FindNearEnemy()
 	TEnumAsByte<EObjectTypeQuery> Enemy = UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody);
 	objectType.Emplace(Enemy);
 	AEnemy* closetEnemy = nullptr;
-	if (UKismetSystemLibrary::SphereTraceMultiForObjects(this, StartPos, EndPos, 200.f, objectType, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hits, true))
+	if (UKismetSystemLibrary::SphereTraceMultiForObjects(this, StartPos, EndPos, 200.f, objectType, false, TArray<AActor*>(), EDrawDebugTrace::None, hits, true))
 	{
 		for (int i = 0; i < hits.Num(); i++)
 		{
@@ -1168,4 +1176,11 @@ void AMainCharacter::FindNearEnemy()
 }
 
 
-
+void AMainCharacter::SetRunSpeed()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 800.f;
+}
+void AMainCharacter::SetWalkSpeed()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+}

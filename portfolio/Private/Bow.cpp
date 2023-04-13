@@ -115,7 +115,6 @@ void ABow::SetArrowType()
 }
 void ABow::SpawnWideArrow()
 {
-	
 	Weapon->PlayAnimation(BowIdleMontage, false);
 	Arrow->GetMesh()->SetWorldScale3D(FVector(1.f, 1.f, 1.f));
 	Arrow->Destroy();
@@ -127,7 +126,7 @@ void ABow::SpawnWideArrow()
 	objectType.Emplace(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
 
 	if (UKismetSystemLibrary::SphereTraceMultiForObjects(this, GetOwner()->GetActorLocation(), GetOwner()->GetActorLocation(), 2500.f, objectType,
-		false, TArray<AActor*>(), EDrawDebugTrace::ForDuration, hits, true))
+		false, TArray<AActor*>(), EDrawDebugTrace::None, hits, true))
 	{
 		for (int i = 0; i < hits.Num(); i++)
 		{

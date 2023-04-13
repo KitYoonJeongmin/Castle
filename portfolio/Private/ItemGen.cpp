@@ -67,13 +67,13 @@ void AItemGen::GenerateItem()
 	{
 		if(Player->Inventory != nullptr)
 			Player->Inventory->AddPotion(FMath::RandRange(1, 2));
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Blue, TEXT("Get Potion"));
+		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Blue, TEXT("Get Potion"));
 	}
 	else if (item == 1)
 	{
 		if(Player->Inventory != nullptr)
 			Player->Inventory->AddGold(FMath::RandRange(1, 100));
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Blue, TEXT("Get Gold"));
+		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Blue, TEXT("Get Gold"));
 	}
 	this->Destroy();
 }

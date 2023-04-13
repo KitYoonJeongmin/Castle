@@ -79,4 +79,5 @@ private:
 	IGenericTeamAgentInterface* targetTeam;
 public:
 	float DetectLevel = 0.f;
+	class UCrowdFollowingComponent* CrowdFollowingComponent;
 };

@@ -118,8 +118,8 @@ public:
 	void LookUp(float Rate);
 
 	/**Shift �Է½�*/
-	void SetRunSpeed() { TargetVelocity = 150.0f; }
-	void SetWalkSpeed(){ TargetVelocity = 70.0f; }
+	void SetRunSpeed(); //{ GetCharacterMovement()->MaxWalkSpeed = 800.f;TargetVelocity = 150.0f; }
+	void SetWalkSpeed();//{ GetCharacterMovement()->MaxWalkSpeed = 600.f; TargetVelocity = 70.0f; }
 
 	void Shot();
 	FHitResult LineTrace();

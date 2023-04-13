@@ -110,9 +110,9 @@ void AKnightEnemy::BeginPlay()
 	EnableHPBar(false);
 	EnableDetectBar(false);
 	
-	//CharacterMovement
-	GetCharacterMovement()->bUseRVOAvoidance = true;
-	GetCharacterMovement()->AvoidanceConsiderationRadius = 350.f;
+	//Crowd(RVO)Movement
+	//GetCharacterMovement()->bUseRVOAvoidance = true;
+	//GetCharacterMovement()->AvoidanceConsiderationRadius = 350.f;
 	
 }
 
@@ -184,6 +184,8 @@ void AKnightEnemy::UseSword()
 void AKnightEnemy::PlayAssassination()
 {
 	EnemyAnim->PlayAssassinationAnim();
+	GetController()->UnPossess();
+	SetActorEnableCollision(false);
 }
 
 
@@ -209,18 +211,18 @@ FVector AKnightEnemy::GetNextLocaiton()
 	{
 		AddIndex = 1;
 		PatrolCheckPoint = true;
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("First Point"));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("First Point"));
 	}
 	else if (PointIndex == Cast<USplineComponent>(PatrolPath->GetRootComponent())->GetNumberOfSplinePoints() - 1)
 	{
 		AddIndex = -1;
 		PatrolCheckPoint = true;
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Last Point"));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Last Point"));
 	}
 	else
 	{
 		PatrolCheckPoint = false;
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Patrol"));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Patrol"));
 	}
 	PointIndex += AddIndex;
 	return Cast<USplineComponent>(PatrolPath->GetRootComponent())->GetLocationAtSplinePoint(PointIndex, ESplineCoordinateSpace::World);
@@ -249,14 +251,6 @@ float AKnightEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 		UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), GetActorLocation() + DamageCauser->GetActorForwardVector() * 50.f, GetActorRotation(), false, false, 0.3f, false, EMoveComponentAction::Type::Move, Info);
 		EnemyAnim->PlayPainMontage();
 	}
-
-	//FTimerHandle WaitHandle;
-	//float WaitTime = 2.f;
-	//GetWorld()->GetTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&]()
-	//	{
-	//		if (HealthPoint > 0.f)
-	//			Cast<AMainEnemyAIController>(GetController())->SetStun(false);
-	//	}), WaitTime, false);
 	
 	return FinalDamage;
 }
