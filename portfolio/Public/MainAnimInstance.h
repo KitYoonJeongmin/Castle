@@ -199,6 +199,8 @@ protected:
 	UFUNCTION()
 		void AnimNotify_Mount();
 	UFUNCTION()
+		void AnimNotify_Ride();
+	UFUNCTION()
 		void AnimNotify_Dismount();
 
 

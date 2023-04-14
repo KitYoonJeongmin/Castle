@@ -41,11 +41,13 @@ ARidingHorse::ARidingHorse()
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 450.f;
 	CameraBoom->bUsePawnControlRotation = true;
+	CameraBoom->bDoCollisionTest = false;
 
 	// Camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+	
 
 	// Box Collision
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollision"));
@@ -54,8 +56,7 @@ ARidingHorse::ARidingHorse()
 	BoxComponent->SetBoxExtent(FVector(95.f, 95.f, 62.f));
 
 	//mount
-	MountPos.Add(CreateDefaultSubobject<USceneComponent>(TEXT("AttachComp_L")));
-	MountPos.Add(CreateDefaultSubobject<USceneComponent>(TEXT("AttachComp_R")));
+	MountPos = CreateDefaultSubobject<UActorComponent>(TEXT("RiderPos"));
 
 	//Movement
 	GetCharacterMovement()->MaxWalkSpeed = 1200.f;
@@ -197,7 +198,9 @@ void ARidingHorse::LookUp(float Rate)
 void ARidingHorse::Mount()
 {
 	AMainCharacter* Character = Cast<AMainCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	
+	
+	UGameplayStatics::GetPlayerController(GetWorld(), 0)->DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	Character->SetActorRotation(this->GetActorRotation());
 	FVector ToHorseVec = this->GetActorLocation() - Character->GetActorLocation();
 	Character->MainAnim->MountR = FVector::DotProduct(ToHorseVec, Character->GetActorRightVector());
@@ -207,11 +210,10 @@ void ARidingHorse::Mount()
 	CharLoc.Z = this->GetActorLocation().Z;
 	Character->SetActorLocation(CharLoc);
 	FVector TargetLoc = Character->GetActorLocation() + Character->MainAnim->MountF * Character->GetActorForwardVector() + Character->MainAnim->MountR * Character->GetActorRightVector() + Character->GetActorUpVector() * 20.f;
-	FLatentActionInfo Info;
-	Info.CallbackTarget = this;
-	UKismetSystemLibrary::MoveComponentTo(Character->GetCapsuleComponent(), TargetLoc
-		, Character->GetActorRotation(), false, false, 0.01f, false, EMoveComponentAction::Type::Move, Info);
+	Character->SetActorLocation(TargetLoc);
+
 	Character->MainAnim->CanMount = true;
+	//Character->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform, "SeatSocket");
 }
 
 void ARidingHorse::Dismount()

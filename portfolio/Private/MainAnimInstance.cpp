@@ -308,7 +308,7 @@ void UMainAnimInstance::SetUpperBodyRotation(float Yaw, float Pitch)
 void UMainAnimInstance::SetRandomAttackMon()
 {
 	AttackMonIndex = FMath::RandRange(0, 1);
-}
+} 
 
 
 void UMainAnimInstance::FootIK(float DeltaTime)
@@ -491,18 +491,20 @@ void UMainAnimInstance::AnimNotify_JumpUpEnd()
 }
 void UMainAnimInstance::AnimNotify_Mount()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Mount!"));
+	
+	GetWorld()->GetFirstPlayerController()->Possess(Cast<APawn>(Character->Horse));
+	Character->MainAnim->CanMount = true;
+	IsMount = true;
+	
+}
+void UMainAnimInstance::AnimNotify_Ride()
+{
 	Character->GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Flying;
 	Character->GetCharacterMovement()->BrakingDecelerationFlying = 1000000.f;
-	Character->AttachToActor(Character->Horse, FAttachmentTransformRules::KeepWorldTransform, "SeatSocket");
-	GetWorld()->GetFirstPlayerController()->Possess(Cast<APawn>(Character->Horse));
-	Character->Horse->EnableInput(GetWorld()->GetFirstPlayerController());
-	FLatentActionInfo Info;
-	Info.CallbackTarget = this;
-	UKismetSystemLibrary::MoveComponentTo(Character->GetCapsuleComponent(), Cast<ACharacter>(Character->Horse)->GetMesh()->GetSocketLocation(FName("SeatSocket"))- Character->Horse->GetActorLocation()
-		, FRotator(0.f,0.f,0.f), false, false, 0.1f, false, EMoveComponentAction::Type::Move, Info);
-	Character->MainAnim->CanMount = true;
+	Character->AttachToActor(Character->Horse, FAttachmentTransformRules::KeepWorldTransform);
 	
-	IsMount = true;
+	Character->SetActorLocation(Cast<ACharacter>(Character->Horse)->GetMesh()->GetSocketLocation(FName("SeatSocket")));
 }
 void UMainAnimInstance::AnimNotify_Dismount()
 {

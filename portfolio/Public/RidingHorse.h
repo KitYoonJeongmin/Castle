@@ -41,7 +41,7 @@ public:
 
 	//�ɱ�
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mount, meta = (AllowPrivateAccess = "true"))
-		TArray<USceneComponent*> MountPos;
+		UActorComponent* MountPos;
 
 	/** ��, �� �Է½� Call */
 	void MoveForward(float Value);
@@ -70,4 +70,5 @@ public:
 private:
 	UPROPERTY(VisibleAnyWhere, Category = UI)
 		class UWidgetComponent* InteractWidget;
+
 };
