@@ -20,7 +20,8 @@ public:
 
 protected:
 	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSecondes) override;
-	
+privated:
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Enemy", Meta = (AllowPrivateAccess = true))
 	AEnemy* Enemy;
 
 };
