@@ -45,5 +45,6 @@ public:
 		class UButton* ItemButton;
 	FShopItem ShopItemStruct;
 
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Shop")
 	class UShopWidget* ParentWidget;
 };
