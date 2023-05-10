@@ -23,6 +23,7 @@ public:
 	float GetSplineLength();
 	FVector GetLocationAtDistanceAlongSpline(float Distance, ESplineCoordinateSpace::Type CoordinateSpace);
 private:
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Path", Meta = (AllowPrivateAccess = true))
 	class USplineComponent* PatrolPath;
 
 };
