@@ -41,10 +41,12 @@ protected:
 private:
 	UPROPERTY(VisibleAnywhere, Category = Weapon)
 		class ASword* Sword;
-	UBossAnimInstance* BossAnim;
+	UPROPERTY(VisibleAnywhere, Category = Anim)
+		UBossAnimInstance* BossAnim;
 	int32 ComboNum = 1;
 protected:
 	TSubclassOf<UUserWidget> MainHUDWidgetClass;
+	UPROPERTY(VisibleAnywhere, Category = Widget)
 	class UMainHUDWidget* MainHUDWidget;
 
 };
