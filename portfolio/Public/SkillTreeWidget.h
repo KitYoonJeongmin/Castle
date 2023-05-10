@@ -20,10 +20,11 @@ public:
 	void SelectNode(class USkillNodeWidget* NodeWidget);
 	void FadeAnimationPlay(bool IsIn);
 public:
-	
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "SkillTree")
 	TArray<class USkillNodeWidget*> SkillTree;
 	TArray<int32> TreeLoad;
 	TArray<TTuple<int32, int32>> TreeConnection;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "SkillTree")
 	TMap<class USkillNodeWidget*, int32> NodeNumMap;
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 		class UWidgetAnimation* Fade;
