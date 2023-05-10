@@ -43,10 +43,11 @@ public:
 	virtual void Init() override;
 
 public:
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Data")
 	FMainCharacterData* GetMainCharacterData(int32 Level);
 
 private:
-	UPROPERTY()
-		class UDataTable* MainCharacterTable;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Data", Meta = (AllowPrivateAccess = true))
+	class UDataTable* MainCharacterTable;
 
 };
