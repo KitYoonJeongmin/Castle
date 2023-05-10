@@ -94,9 +94,9 @@ protected:
 	TTuple<bool, float, FVector> FootLineTrace(FName SocketName, ACharacter* Char);
 
 protected:
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Character", Meta = (AllowPrivateAccess = true))
 		class AMainCharacter* Character;
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "IK", Meta = (AllowPrivateAccess = true))
 		TArray<AActor*> IgnoreActors;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "IK", meta = (AllowPrivateAccess = "true"))
 		float Displacement;
