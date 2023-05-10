@@ -45,15 +45,15 @@ public:
 protected:
 	UPROPERTY(VisibleInstanceOnly, BluePrintReadOnly, Category = HealthPoint, Meta = (AllowPrivateAccess = true))
 		float HealthPoint;
-	UPROPERTY(VisibleAnyWhere, Category = UI)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI, Meta = (AllowPrivateAccess = true))
 		class UWidgetComponent* HPBarWidget;
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Anim, Meta = (AllowPrivateAccess = true))
 		class UKnightEnemyAnimInstance* EnemyAnim;
 	UFUNCTION()
 		virtual void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 	float Damage;
 	
 private:
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI, Meta = (AllowPrivateAccess = true))
 		class UWidgetComponent* TargetOn;
 };
