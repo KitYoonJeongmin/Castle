@@ -96,7 +96,7 @@ private:
 	FVector SideJumpLoc;
 	FVector SideJumpWallLoc;
 
-
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Character, Meta = (AllowPrivateAccess = true))
 	ACharacter* Character;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Climbing, Meta = (AllowPrivateAccess = true))
