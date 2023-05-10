@@ -37,6 +37,7 @@ public:
 	FOnHPChangedDelegate OnHPChanged;
 
 private:
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Data", Meta = (AllowPrivateAccess = true))
 	struct FMainCharacterData* CurrentStatData = nullptr;
 
 	UPROPERTY(EditInstanceOnly, Category = Stat, Meta = (AllowPrivateAccess = true))
