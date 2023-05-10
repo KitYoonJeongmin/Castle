@@ -36,25 +36,26 @@ public:
 	bool IsAttachingTargetOn = false;
 	class UMainSaveGame* MainSaveGame;
 public:
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
 	TSubclassOf<UUserWidget> AnimWidgetClass;
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
 	class UAimUI* AimWidget;
 
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
 		TSubclassOf<UUserWidget> MainHUDClass;
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
 		class UMainHUDWidget* MainHUD;
 
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
 		TSubclassOf<UUserWidget> ClearWidgetClass;
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
 		class UTitleUserWidget* ClearWidget;
 
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
 		class USkillTreeWidget* SkillTreeWidget;
 private:
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Character", Meta = (AllowPrivateAccess = true))
 	class AMainCharacter* Player;
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Save", Meta = (AllowPrivateAccess = true))
 		FString SaveSlotName;
 };
