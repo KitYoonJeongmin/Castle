@@ -29,11 +29,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 public:
-	// �浹�� �����ҽÿ� ȣ��Ǵ� ��������Ʈ�� ����ϴ� �Լ�
+	// 화살의 Overlap이 감지돼 공격할 때 실행
 	UFUNCTION()
-		void ArrowBeginOverlap(UPrimitiveComponent* OverlappedComponent,
-			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-			bool bFromSweep, const FHitResult& SweepResult);
+		void ArrowBeginOverlap(UPrimitiveComponent* OverlappedComponent,AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,bool bFromSweep, const FHitResult& SweepResult);
 	
 public:	
 	// Called every frame
@@ -53,7 +51,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = State)
 		EArrowState CurrentState;
 
-	//��ƼŬ
+	//파티클
 	UPROPERTY(VisibleAnywhere, Category = Particle)
 		class UParticleSystemComponent* ArrowParticle;
 	UPROPERTY(VisibleAnywhere, Category = Particle)
@@ -68,7 +66,7 @@ private:
 		float RemainTime;
 	UPROPERTY(VisibleAnywhere, Category = Poision)
 		AActor* PoisionActor;
-	//��Ƽ����
+	//머티리얼
 	UPROPERTY(VisibleAnywhere, Category = Material)
 		UMaterial* LightingArrowMat;
 	UPROPERTY(VisibleAnywhere, Category = Material)
