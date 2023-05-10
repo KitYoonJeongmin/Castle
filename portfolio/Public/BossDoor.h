@@ -31,5 +31,6 @@ private:
 		UStaticMeshComponent* Mesh;
 	UPROPERTY(VisibleAnyWhere, Category = UI)
 		class UWidgetComponent* InteractWidget;
-	class USphereComponent* Sphere;
+	UPROPERTY(VisibleAnyWhere, Category = Collision)
+		class USphereComponent* Sphere;
 };
