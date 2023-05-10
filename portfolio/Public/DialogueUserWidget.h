@@ -19,6 +19,6 @@ public:
 
 	void SetDiagloueText(FString Text);
 private:
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Climbing, Meta = (AllowPrivateAccess = true))
 		class UTextBlock* DiagloueText;
 };
