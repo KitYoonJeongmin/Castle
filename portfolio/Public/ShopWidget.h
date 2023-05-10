@@ -27,7 +27,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UTextBlock* Potion;
 private:
-	UPROPERTY()
-		class UDataTable* ShopItemTable;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Shop", Meta = (AllowPrivateAccess = true))
+	class UDataTable* ShopItemTable;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "MainUI", Meta = (AllowPrivateAccess = true))
 	class UMainHUDWidget* MainHUD;
 };
