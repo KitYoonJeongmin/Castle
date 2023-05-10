@@ -23,10 +23,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void PostInitializeComponents() override;
-
-	UPROPERTY(VisibleAnywhere, Category = Weapon)
-		USkeletalMeshComponent* Weapon;
 	void PlayDrawBowMon(bool IsDraw, int8 fireIndex);
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
+		USkeletalMeshComponent* Weapon;
+	
 public:
 	/**화살 생성*/
 	void SpawnArrow();
@@ -38,6 +38,7 @@ public:
 	void SpawnWideArrow();
 	/**주변 적 다수에게 화살을 날림*/
 	void WideFire();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Arrow)
 	class AArrow* Arrow;
 private:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Bow, Meta = (AllowPrivateAccess = true))
@@ -49,6 +50,8 @@ private:
 
 private:
 	//wide fire
-	TArray<AActor*> WideEnemyArr;
-	TArray<AArrow*> WideArrowArr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = WideFire, Meta = (AllowPrivateAccess = true))
+		TArray<AActor*> WideEnemyArr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = WideFire, Meta = (AllowPrivateAccess = true))
+		TArray<AArrow*> WideArrowArr;
 };
