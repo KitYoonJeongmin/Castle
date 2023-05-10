@@ -33,14 +33,15 @@ public:
 	UFUNCTION()
 		void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 private:
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Collision", Meta = (AllowPrivateAccess = true))
 	class USphereComponent* Sphere;
 
 	TArray<FString> DialogueArr;
 	int32 CurrentDia = -1;
 
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Dialogue", Meta = (AllowPrivateAccess = true))
 		class UDialogueUserWidget* DialogueWidget;
-	UPROPERTY()
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Dialogue", Meta = (AllowPrivateAccess = true))
 		TSubclassOf<UUserWidget> DialogueWidgetClass;
 
 	UPROPERTY(VisibleAnyWhere, Category = UI)
