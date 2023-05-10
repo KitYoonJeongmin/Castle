@@ -18,6 +18,7 @@ public:
 	virtual void BeginPlay() override;
 private:
 	TSubclassOf<UUserWidget> TitleUserWidgetClass;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "TitleUI", Meta = (AllowPrivateAccess = true))
 	class UTitleUserWidget* TitleUserWidget;
 	
 };
